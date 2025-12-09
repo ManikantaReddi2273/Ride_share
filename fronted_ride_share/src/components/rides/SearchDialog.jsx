@@ -896,9 +896,9 @@ const SearchDialog = ({ open, onClose }) => {
                   )}
                   {(selectedRide.driverName || selectedRide.driver?.name) && (
                     <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
-                      <Typography variant="body2" color="text.secondary">
-                        Driver: {selectedRide.driverName || selectedRide.driver?.name}
-                      </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Driver: {selectedRide.driverName || selectedRide.driver?.name}
+                    </Typography>
                       {(() => {
                         const rating = (selectedRide.driverRating != null && selectedRide.driverRating !== undefined && !isNaN(selectedRide.driverRating))
                           ? Number(selectedRide.driverRating)

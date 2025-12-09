@@ -426,22 +426,22 @@ const BookingsPage = () => {
                   {/* Show completed indicator if ride is completed via OTP verification */}
                   {booking.status === 'COMPLETED' && booking.passengerConfirmed && (
                     <Stack spacing={1}>
-                      <Chip
-                        icon={<CheckCircleRoundedIcon />}
-                        label="OTP Verified & Payment Released"
-                        color="success"
-                        sx={{
-                          fontWeight: 600,
-                          bgcolor: 'success.main',
+                    <Chip
+                      icon={<CheckCircleRoundedIcon />}
+                      label="OTP Verified & Payment Released"
+                      color="success"
+                      sx={{
+                        fontWeight: 600,
+                        bgcolor: 'success.main',
+                        color: 'white',
+                        px: 2,
+                        py: 1,
+                        '& .MuiChip-icon': {
                           color: 'white',
-                          px: 2,
-                          py: 1,
-                          '& .MuiChip-icon': {
-                            color: 'white',
-                            fontSize: '1.2rem',
-                          },
-                        }}
-                      />
+                          fontSize: '1.2rem',
+                        },
+                      }}
+                    />
                       <Button
                         variant="outlined"
                         color="primary"
