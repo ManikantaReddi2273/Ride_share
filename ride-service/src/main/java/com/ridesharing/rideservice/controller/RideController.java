@@ -49,8 +49,10 @@ public class RideController {
     @PostMapping
     public ResponseEntity<RideResponse> postRide(
             @RequestHeader("X-User-Id") Long driverId,
+            @RequestHeader("X-User-Role") String userRole,
             @RequestHeader("Authorization") String authorization,
             @Valid @RequestBody RideRequest request) {
+        com.ridesharing.rideservice.util.AdminCheckUtil.preventAdminAccess(userRole);
         RideResponse response = rideService.postRide(driverId, request, authorization);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
@@ -165,8 +167,10 @@ public class RideController {
     public ResponseEntity<BookingResponse> bookSeat(
             @PathVariable Long rideId,
             @RequestHeader("X-User-Id") Long passengerId,
+            @RequestHeader("X-User-Role") String userRole,
             @RequestHeader("Authorization") String authorization,
             @Valid @RequestBody BookingRequest request) {
+        com.ridesharing.rideservice.util.AdminCheckUtil.preventAdminAccess(userRole);
         BookingResponse response = rideService.bookSeat(rideId, passengerId, request, authorization);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
@@ -238,7 +242,9 @@ public class RideController {
     @GetMapping("/my-rides")
     public ResponseEntity<List<RideResponse>> getMyRides(
             @RequestHeader("X-User-Id") Long driverId,
+            @RequestHeader("X-User-Role") String userRole,
             @RequestHeader(value = "Authorization", required = false) String authorization) {
+        com.ridesharing.rideservice.util.AdminCheckUtil.preventAdminAccess(userRole);
         List<RideResponse> rides = rideService.getMyRides(driverId, authorization);
         return new ResponseEntity<>(rides, HttpStatus.OK);
     }
@@ -253,7 +259,9 @@ public class RideController {
      */
     @GetMapping("/my-bookings")
     public ResponseEntity<List<BookingResponse>> getMyBookings(
-            @RequestHeader("X-User-Id") Long passengerId) {
+            @RequestHeader("X-User-Id") Long passengerId,
+            @RequestHeader("X-User-Role") String userRole) {
+        com.ridesharing.rideservice.util.AdminCheckUtil.preventAdminAccess(userRole);
         List<BookingResponse> bookings = rideService.getMyBookings(passengerId);
         return new ResponseEntity<>(bookings, HttpStatus.OK);
     }

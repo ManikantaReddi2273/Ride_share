@@ -5,25 +5,20 @@ import {
   Avatar,
   Box,
   Button,
-  IconButton,
   Stack,
   Toolbar,
-  Tooltip,
   Typography,
 } from '@mui/material'
-import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded'
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded'
 import AddRoadRoundedIcon from '@mui/icons-material/AddRoadRounded'
 import DirectionsCarFilledRoundedIcon from '@mui/icons-material/DirectionsCarFilledRounded'
-import { useDispatch, useSelector } from 'react-redux'
+import { useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 
-import { logout } from '../../features/auth/authSlice'
 import SearchDialog from '../rides/SearchDialog'
 import NotificationBell from '../notifications/NotificationBell'
 
 const TopBar = ({ drawerWidth }) => {
-  const dispatch = useDispatch()
   const navigate = useNavigate()
   const { user } = useSelector((state) => state.auth)
   const [searchDialogOpen, setSearchDialogOpen] = useState(false)
@@ -46,24 +41,29 @@ const TopBar = ({ drawerWidth }) => {
         </Box>
 
         <Stack direction="row" alignItems="center" spacing={2}>
-          <Button
-            color="primary"
-            variant="outlined"
-            startIcon={<SearchRoundedIcon />}
-            onClick={() => setSearchDialogOpen(true)}
-            sx={{ display: { xs: 'none', sm: 'flex' } }}
-          >
-            Search
-          </Button>
-          <Button
-            color="primary"
-            variant="contained"
-            startIcon={<AddRoadRoundedIcon />}
-            onClick={() => navigate('/rides/post')}
-            sx={{ display: { xs: 'none', sm: 'flex' } }}
-          >
-            Post Ride
-          </Button>
+          {/* Hide Search and Post Ride buttons for admin users */}
+          {user?.role !== 'ADMIN' && (
+            <>
+              <Button
+                color="primary"
+                variant="outlined"
+                startIcon={<SearchRoundedIcon />}
+                onClick={() => setSearchDialogOpen(true)}
+                sx={{ display: { xs: 'none', sm: 'flex' } }}
+              >
+                Search
+              </Button>
+              <Button
+                color="primary"
+                variant="contained"
+                startIcon={<AddRoadRoundedIcon />}
+                onClick={() => navigate('/rides/post')}
+                sx={{ display: { xs: 'none', sm: 'flex' } }}
+              >
+                Post Ride
+              </Button>
+            </>
+          )}
           <NotificationBell />
           <Box display="flex" alignItems="center" gap={1}>
             <Avatar sx={{ bgcolor: 'primary.main' }}>
@@ -73,11 +73,6 @@ const TopBar = ({ drawerWidth }) => {
               {user?.name || user?.email || 'User'}
             </Typography>
           </Box>
-          <Tooltip title="Sign out">
-            <IconButton color="inherit" onClick={() => dispatch(logout())}>
-              <LogoutRoundedIcon />
-            </IconButton>
-          </Tooltip>
         </Stack>
       </Toolbar>
       <SearchDialog 

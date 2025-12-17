@@ -151,7 +151,10 @@ public class PaymentController {
      * @return Wallet balance
      */
     @GetMapping("/wallet/{userId}")
-    public ResponseEntity<Map<String, Object>> getWalletBalance(@PathVariable Long userId) {
+    public ResponseEntity<Map<String, Object>> getWalletBalance(
+            @PathVariable Long userId,
+            @RequestHeader(value = "X-User-Role", required = false) String userRole) {
+        com.ridesharing.paymentservice.util.AdminCheckUtil.preventAdminAccess(userRole);
         // Get or create wallet (this will create if doesn't exist in a write transaction)
         Wallet wallet = walletService.getOrCreateWallet(userId);
         Map<String, Object> response = new HashMap<>();
@@ -171,7 +174,10 @@ public class PaymentController {
      * @return List of wallet transactions
      */
     @GetMapping("/wallet/{userId}/transactions")
-    public ResponseEntity<List<WalletTransaction>> getWalletTransactions(@PathVariable Long userId) {
+    public ResponseEntity<List<WalletTransaction>> getWalletTransactions(
+            @PathVariable Long userId,
+            @RequestHeader(value = "X-User-Role", required = false) String userRole) {
+        com.ridesharing.paymentservice.util.AdminCheckUtil.preventAdminAccess(userRole);
         // Get or create wallet first (this will create if doesn't exist in a write transaction)
         walletService.getOrCreateWallet(userId);
         // Then get transactions (read-only)

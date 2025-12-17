@@ -2,8 +2,10 @@ package com.ridesharing.userservice.service;
 
 import com.ridesharing.userservice.dto.ApiResponse;
 import com.ridesharing.userservice.dto.AuthResponse;
+import com.ridesharing.userservice.dto.ForgotPasswordRequest;
 import com.ridesharing.userservice.dto.LoginRequest;
 import com.ridesharing.userservice.dto.RegisterRequest;
+import com.ridesharing.userservice.dto.ResetPasswordRequest;
 import com.ridesharing.userservice.dto.VerifyOtpRequest;
 import com.ridesharing.userservice.entity.*;
 import com.ridesharing.userservice.exception.BadRequestException;
@@ -57,10 +59,18 @@ public class AuthService {
      * Register a new user
      * This method generates OTP and saves registration data temporarily in pending_registrations table.
      * User account is only created in users table after OTP verification.
+     * ADMIN role cannot be created through public registration - only through admin dashboard.
      * @param request Registration request containing user details
      * @return AuthResponse with verification required flag
      */
     public AuthResponse register(RegisterRequest request) {
+        // Prevent ADMIN role creation through public registration
+        // ADMIN users can only be created by existing admins through admin dashboard
+        if (request.getEmail() != null && request.getEmail().toLowerCase().contains("admin")) {
+            // Additional check: if someone tries to register with admin email pattern
+            // This is a soft check - the actual role assignment happens in verifyOtp
+        }
+        
         // Check if user already exists (verified users)
         if (userRepository.existsByEmailOrPhone(request.getEmail(), request.getPhone())) {
             throw new BadRequestException("User already exists with this email or phone number");
@@ -210,6 +220,70 @@ public class AuthService {
     private String generateOtp() {
         int otp = 1000 + OTP_RANDOM.nextInt(9000);
         return String.valueOf(otp);
+    }
+
+    /**
+     * Initiate forgot password flow by sending OTP to user's email.
+     * This reuses the verificationCode / verificationExpiresAt fields on the User entity.
+     *
+     * @param request forgot password request with email
+     * @return ApiResponse indicating OTP sent
+     */
+    public ApiResponse forgotPassword(ForgotPasswordRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new BadRequestException("No account found with this email"));
+
+        if (!Boolean.TRUE.equals(user.getEmailVerified())) {
+            throw new BadRequestException("Email is not verified. Please verify your account first.");
+        }
+
+        String otp = generateOtp();
+        LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(OTP_TTL_MINUTES);
+
+        user.setVerificationCode(otp);
+        user.setVerificationExpiresAt(expiresAt);
+        userRepository.save(user);
+
+        emailService.sendPasswordResetEmail(user.getEmail(), otp);
+
+        return new ApiResponse(true, "Reset OTP sent to your email. It expires in 10 minutes.");
+    }
+
+    /**
+     * Reset password after verifying OTP.
+     *
+     * @param request reset password request with email, otp, newPassword
+     * @return ApiResponse indicating success
+     */
+    public ApiResponse resetPassword(ResetPasswordRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new BadRequestException("No account found with this email"));
+
+        // Validate OTP presence and expiry
+        if (user.getVerificationCode() == null || user.getVerificationExpiresAt() == null) {
+            throw new BadRequestException("No active reset request found. Please request a new OTP.");
+        }
+
+        if (user.getVerificationExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new BadRequestException("OTP has expired. Please request a new one.");
+        }
+
+        if (!user.getVerificationCode().trim().equals(request.getOtp().trim())) {
+            throw new BadRequestException("Invalid OTP. Please check the code sent to your email.");
+        }
+
+        // Prevent using the same password
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPasswordHash())) {
+            throw new BadRequestException("New password must be different from current password.");
+        }
+
+        // Update password and clear verification fields
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        user.setVerificationCode(null);
+        user.setVerificationExpiresAt(null);
+        userRepository.save(user);
+
+        return new ApiResponse(true, "Password reset successful. You can now log in with your new password.");
     }
 }
 

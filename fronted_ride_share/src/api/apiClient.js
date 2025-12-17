@@ -75,9 +75,19 @@ export const getAddressSuggestions = async (query) => {
 
 export const setupInterceptors = (store) => {
   apiClient.interceptors.request.use((request) => {
-    const { token } = store.getState().auth
+    const { token, user } = store.getState().auth
     if (token) {
       request.headers.Authorization = `Bearer ${token}`
+    }
+    // Log admin API requests for debugging
+    if (request.url && request.url.includes('/admin/')) {
+      console.log('🔐 Admin API Request:', {
+        url: request.url,
+        method: request.method,
+        hasToken: !!token,
+        userRole: user?.role,
+        fullUrl: `${request.baseURL}${request.url}`,
+      })
     }
     return request
   })
@@ -97,10 +107,37 @@ export const setupInterceptors = (store) => {
   }
 
   apiClient.interceptors.response.use(
-    (response) => response,
+    (response) => {
+      // Log admin API responses for debugging
+      if (response.config?.url && response.config.url.includes('/admin/')) {
+        console.log('✅ Admin API Response:', {
+          url: response.config.url,
+          status: response.status,
+          data: response.data,
+          dataType: typeof response.data,
+          isArray: Array.isArray(response.data),
+        })
+      }
+      return response
+    },
     async (error) => {
+      // Log admin API errors for debugging
+      if (error.config?.url && error.config.url.includes('/admin/')) {
+        console.error('❌ Admin API Error:', {
+          url: error.config.url,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+          message: error.message,
+        })
+      }
       const originalRequest = error.config
-      if (error.response?.status === 401 && !originalRequest._retry) {
+      
+      // Skip token refresh for public endpoints (they shouldn't return 401, but if they do, don't try to refresh)
+      const publicEndpoints = ['/login', '/register', '/verify-otp', '/forgot-password', '/reset-password']
+      const isPublicEndpoint = publicEndpoints.some(endpoint => originalRequest?.url?.includes(endpoint))
+      
+      if (error.response?.status === 401 && !originalRequest._retry && !isPublicEndpoint) {
         const { refreshToken } = store.getState().auth
         if (!refreshToken) {
           store.dispatch(logout())

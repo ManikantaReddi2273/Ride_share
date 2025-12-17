@@ -68,13 +68,28 @@ public class GlobalExceptionHandler {
     }
     
     /**
+     * Handle ForbiddenException
+     */
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ErrorResponse> handleForbiddenException(ForbiddenException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                "Forbidden",
+                ex.getMessage(),
+                HttpStatus.FORBIDDEN.value(),
+                LocalDateTime.now()
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
+    }
+    
+    /**
      * Handle generic exceptions
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
+        ex.printStackTrace(); // Print stack trace for debugging
         ErrorResponse errorResponse = new ErrorResponse(
                 "Internal Server Error",
-                ex.getMessage(),
+                ex.getMessage() != null ? ex.getMessage() : "An unexpected error occurred",
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 LocalDateTime.now()
         );

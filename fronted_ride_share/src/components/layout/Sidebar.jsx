@@ -16,11 +16,10 @@ import PaymentRoundedIcon from '@mui/icons-material/PaymentRounded'
 import StarRoundedIcon from '@mui/icons-material/StarRounded'
 import PersonRoundedIcon from '@mui/icons-material/PersonRounded'
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded'
-import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded'
 import DirectionsCarFilledRoundedIcon from '@mui/icons-material/DirectionsCarFilledRounded'
+import AdminPanelSettingsRoundedIcon from '@mui/icons-material/AdminPanelSettingsRounded'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { useDispatch } from 'react-redux'
-import { logout } from '../../features/auth/authSlice'
+import { useSelector } from 'react-redux'
 
 const navItems = [
   {
@@ -62,16 +61,18 @@ const navItems = [
 
 const Sidebar = ({ width }) => {
   const navigate = useNavigate()
-  const dispatch = useDispatch()
   const location = useLocation()
+  const { user } = useSelector((state) => state.auth)
 
-  // All users can see all menu items (no role filtering)
-  const filteredItems = navItems
-
-  const handleLogout = () => {
-    dispatch(logout())
-    navigate('/login')
-  }
+  // Admin users only see Admin Dashboard
+  // Regular users see all navigation items
+  const filteredItems = user?.role === 'ADMIN' 
+    ? [{
+        label: 'Admin Dashboard',
+        icon: <AdminPanelSettingsRoundedIcon />,
+        path: '/admin',
+      }]
+    : [...navItems]
 
   return (
     <Drawer
@@ -131,24 +132,6 @@ const Sidebar = ({ width }) => {
             </ListItemButton>
           )
         })}
-      </List>
-      <Divider sx={{ my: 2 }} />
-      <List sx={{ px: 1 }}>
-        <ListItemButton
-          onClick={handleLogout}
-          sx={{
-            borderRadius: 2,
-            color: 'error.main',
-            '&:hover': {
-              backgroundColor: 'rgba(211, 47, 47, 0.08)',
-            },
-          }}
-        >
-          <ListItemIcon sx={{ color: 'error.main' }}>
-            <LogoutRoundedIcon />
-          </ListItemIcon>
-          <ListItemText primary="Logout" primaryTypographyProps={{ fontWeight: 500 }} />
-        </ListItemButton>
       </List>
     </Drawer>
   )

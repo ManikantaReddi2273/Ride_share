@@ -58,7 +58,7 @@ Objectives
 ?? Features to Implement
 1. Dynamic Fare Calculation
 o Use APIs like Google Maps Distance Matrix to calculate travel distance.
-o Fare = Base Fare + (Rate per Km × Distance).
+o Fare = Base Fare + (Rate per Km Ã— Distance).
 o Split cost if multiple passengers (e.g., proportional to distance covered).
 2. Payment Integration
 o Integrate Razorpay/Stripe/PayPal.

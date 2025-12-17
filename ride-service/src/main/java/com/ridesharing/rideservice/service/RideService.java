@@ -1969,7 +1969,7 @@ public class RideService {
      * @param authorization Optional JWT token for fetching additional details
      * @return RideResponse with details
      */
-    private RideResponse buildRideResponseWithDetails(Ride ride, String authorization) {
+    public RideResponse buildRideResponseWithDetails(Ride ride, String authorization) {
         // Use denormalized data from Ride entity
         Map<String, Object> driverProfile = null;
         Map<String, Object> vehicle = null;
@@ -2195,7 +2195,7 @@ public class RideService {
     /**
      * Build BookingResponse from Booking entity
      */
-    private BookingResponse buildBookingResponse(Booking booking, Map<String, Object> passengerProfile, Ride ride) {
+    public BookingResponse buildBookingResponse(Booking booking, Map<String, Object> passengerProfile, Ride ride) {
         BookingResponse response = new BookingResponse();
         response.setId(booking.getId());
         response.setRideId(booking.getRide().getId());

@@ -4,8 +4,10 @@ import com.ridesharing.userservice.dto.*;
 import com.ridesharing.userservice.entity.*;
 import com.ridesharing.userservice.exception.BadRequestException;
 import com.ridesharing.userservice.exception.ResourceNotFoundException;
+import com.ridesharing.userservice.exception.UnauthorizedException;
 import com.ridesharing.userservice.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +34,9 @@ public class UserService {
     
     @Autowired
     private VehicleRepository vehicleRepository;
+    
+    @Autowired
+    private PasswordEncoder passwordEncoder;
     
     /**
      * Get user profile by user ID
@@ -171,6 +176,64 @@ public class UserService {
             "color", vehicle.getColor() != null ? vehicle.getColor() : "",
             "capacity", vehicle.getCapacity() != null ? vehicle.getCapacity() : 0
         );
+    }
+    
+    /**
+     * Change user password
+     * @param userId User ID
+     * @param request Change password request containing current and new password
+     * @return ApiResponse indicating success
+     */
+    public ApiResponse changePassword(Long userId, ChangePasswordRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+        
+        // Verify current password
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
+            throw new UnauthorizedException("Current password is incorrect");
+        }
+        
+        // Check if new password is same as current password
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPasswordHash())) {
+            throw new BadRequestException("New password must be different from current password");
+        }
+        
+        // Update password
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+        
+        return new ApiResponse(true, "Password changed successfully");
+    }
+    
+    /**
+     * Delete user account
+     * This will delete the user and all associated data (vehicles, profiles)
+     * @param userId User ID
+     * @return ApiResponse indicating success
+     */
+    public ApiResponse deleteAccount(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+        
+        // Prevent admin account deletion
+        if ("ADMIN".equals(user.getRole().getName())) {
+            throw new BadRequestException("Admin accounts cannot be deleted");
+        }
+        
+        // Delete vehicles first (they have foreign key to user)
+        List<Vehicle> vehicles = vehicleRepository.findByDriverId(userId);
+        vehicleRepository.deleteAll(vehicles);
+        
+        // Delete driver profile (cascade will handle it, but explicit delete is safer)
+        driverProfileRepository.findByUserId(userId).ifPresent(driverProfileRepository::delete);
+        
+        // Delete passenger profile (cascade will handle it, but explicit delete is safer)
+        passengerProfileRepository.findByUserId(userId).ifPresent(passengerProfileRepository::delete);
+        
+        // Finally delete the user
+        userRepository.delete(user);
+        
+        return new ApiResponse(true, "Account deleted successfully");
     }
     
     /**

@@ -2,6 +2,7 @@ package com.ridesharing.userservice.controller;
 
 import com.ridesharing.userservice.dto.*;
 import com.ridesharing.userservice.service.UserService;
+import com.ridesharing.userservice.util.AdminCheckUtil;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -34,6 +35,7 @@ public class UserController {
      */
     @GetMapping("/profile")
     public ResponseEntity<UserProfileResponse> getProfile(Authentication authentication) {
+        AdminCheckUtil.preventAdminAccess(authentication);
         Long userId = (Long) authentication.getPrincipal();
         UserProfileResponse response = userService.getUserProfile(userId);
         return new ResponseEntity<>(response, HttpStatus.OK);
@@ -52,6 +54,7 @@ public class UserController {
     public ResponseEntity<UserProfileResponse> updateProfile(
             Authentication authentication,
             @Valid @RequestBody UpdateProfileRequest request) {
+        AdminCheckUtil.preventAdminAccess(authentication);
         Long userId = (Long) authentication.getPrincipal();
         UserProfileResponse response = userService.updateUserProfile(userId, request);
         return new ResponseEntity<>(response, HttpStatus.OK);
@@ -70,6 +73,7 @@ public class UserController {
     public ResponseEntity<VehicleResponse> addVehicle(
             Authentication authentication,
             @Valid @RequestBody VehicleRequest request) {
+        AdminCheckUtil.preventAdminAccess(authentication);
         Long userId = (Long) authentication.getPrincipal();
         VehicleResponse response = userService.addVehicle(userId, request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
@@ -85,6 +89,7 @@ public class UserController {
      */
     @GetMapping("/vehicles")
     public ResponseEntity<List<VehicleResponse>> getVehicles(Authentication authentication) {
+        AdminCheckUtil.preventAdminAccess(authentication);
         Long userId = (Long) authentication.getPrincipal();
         List<VehicleResponse> vehicles = userService.getUserVehicles(userId);
         return new ResponseEntity<>(vehicles, HttpStatus.OK);
@@ -118,6 +123,41 @@ public class UserController {
     public ResponseEntity<Map<String, Object>> getVehiclePublicInfo(@PathVariable Long vehicleId) {
         Map<String, Object> vehicleInfo = userService.getVehiclePublicInfo(vehicleId);
         return new ResponseEntity<>(vehicleInfo, HttpStatus.OK);
+    }
+    
+    /**
+     * Change user password
+     * PUT /api/users/change-password
+     * Requires authentication
+     * 
+     * @param authentication Spring Security authentication object (contains user ID)
+     * @param request Change password request
+     * @return ApiResponse indicating success
+     */
+    @PutMapping("/change-password")
+    public ResponseEntity<ApiResponse> changePassword(
+            Authentication authentication,
+            @Valid @RequestBody ChangePasswordRequest request) {
+        AdminCheckUtil.preventAdminAccess(authentication);
+        Long userId = (Long) authentication.getPrincipal();
+        ApiResponse response = userService.changePassword(userId, request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    
+    /**
+     * Delete user account
+     * DELETE /api/users/account
+     * Requires authentication
+     * 
+     * @param authentication Spring Security authentication object (contains user ID)
+     * @return ApiResponse indicating success
+     */
+    @DeleteMapping("/account")
+    public ResponseEntity<ApiResponse> deleteAccount(Authentication authentication) {
+        AdminCheckUtil.preventAdminAccess(authentication);
+        Long userId = (Long) authentication.getPrincipal();
+        ApiResponse response = userService.deleteAccount(userId);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }
 

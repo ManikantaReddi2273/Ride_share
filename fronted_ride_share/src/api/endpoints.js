@@ -5,6 +5,10 @@ export const endpoints = {
     profile: '/users/profile',
     refresh: '/users/refresh',
     verifyOtp: '/users/verify-otp',
+    changePassword: '/users/change-password',
+    deleteAccount: '/users/account',
+    forgotPassword: '/users/forgot-password',
+    resetPassword: '/users/reset-password',
   },
   vehicles: {
     list: '/users/vehicles',
@@ -48,6 +52,20 @@ export const endpoints = {
     userRating: (userId) => `/reviews/user/${userId}/rating`,
     booking: (bookingId) => `/reviews/booking/${bookingId}`,
     check: (bookingId) => `/reviews/booking/${bookingId}/check`,
+  },
+  admin: {
+    users: '/users/admin/users',
+    createAdmin: '/users/admin/create-admin',
+    blockUser: (userId) => `/users/admin/users/${userId}/block`,
+    unblockUser: (userId) => `/users/admin/users/${userId}/unblock`,
+    getUser: (userId) => `/users/admin/users/${userId}`,
+    rides: '/rides/admin/rides',
+    bookings: '/rides/admin/bookings',
+    rideStatistics: '/rides/admin/statistics',
+    monthlyStatistics: '/rides/admin/monthly-statistics',
+    payments: '/payments/admin/payments',
+    paymentStatistics: '/payments/admin/statistics',
+    monthlyPaymentStatistics: '/payments/admin/monthly-statistics',
   },
 }
 

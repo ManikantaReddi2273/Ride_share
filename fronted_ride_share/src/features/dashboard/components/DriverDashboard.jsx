@@ -39,6 +39,7 @@ const DriverDashboard = ({ rides, bookings, loading, userId }) => {
           label="Total Rides"
           value={totalRides}
           icon={<TimelineRoundedIcon />}
+          index={0}
           chip={
             <Chip
               label={`${completedRides} completed`}
@@ -52,6 +53,7 @@ const DriverDashboard = ({ rides, bookings, loading, userId }) => {
           label="Active Bookings"
           value={activeBookings}
           icon={<EventSeatRoundedIcon />}
+          index={1}
           chip={
             <Chip
               label={`${bookings.length} total`}
@@ -65,12 +67,14 @@ const DriverDashboard = ({ rides, bookings, loading, userId }) => {
           label="Earnings"
           value={`₹${earnings.toLocaleString()}`}
           icon={<CheckCircleRoundedIcon />}
+          index={2}
           chip={<Chip label="This month" size="small" color="success" />}
         />
         <StatCard
           label="Rating"
           value={rating.toFixed(1)}
           icon={<CheckCircleRoundedIcon />}
+          index={3}
           chip={<Chip label={`${completedRides} reviews`} size="small" />}
         />
       </Stack>
@@ -82,7 +86,27 @@ const DriverDashboard = ({ rides, bookings, loading, userId }) => {
         </Box>
       )}
 
-      <Card sx={{ mb: 3 }}>
+      <Card
+        sx={{
+          mb: 3,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          animation: 'fadeInUp 0.6s ease-out 0.5s both',
+          '&:hover': {
+            boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+          },
+          '@keyframes fadeInUp': {
+            from: {
+              opacity: 0,
+              transform: 'translateY(20px)',
+            },
+            to: {
+              opacity: 1,
+              transform: 'translateY(0)',
+            },
+          },
+        }}
+      >
         <CardContent>
           <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
             <Box>
@@ -145,7 +169,26 @@ const DriverDashboard = ({ rides, bookings, loading, userId }) => {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card
+        sx={{
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          animation: 'fadeInUp 0.6s ease-out 0.6s both',
+          '&:hover': {
+            boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+          },
+          '@keyframes fadeInUp': {
+            from: {
+              opacity: 0,
+              transform: 'translateY(20px)',
+            },
+            to: {
+              opacity: 1,
+              transform: 'translateY(0)',
+            },
+          },
+        }}
+      >
         <CardContent>
           <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
             <Box>

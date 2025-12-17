@@ -15,7 +15,7 @@ import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
 import { useDispatch, useSelector } from 'react-redux'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
 
 import { registerUser, verifyOtp, logout, clearPendingVerification } from './authSlice'
 
@@ -40,6 +40,8 @@ const otpSchema = yup.object().shape({
 const RegisterPage = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
+  const location = useLocation()
+  const preFilledEmail = location.state?.email
   const {
     status,
     error,
@@ -55,16 +57,24 @@ const RegisterPage = () => {
     register,
     handleSubmit,
     formState: { errors },
+    setValue,
   } = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
       name: '',
-      email: '',
+      email: preFilledEmail || '',
       phone: '',
       password: '',
       confirmPassword: '',
     },
   })
+
+  // Auto-fill email if provided via navigation state
+  useEffect(() => {
+    if (preFilledEmail) {
+      setValue('email', preFilledEmail)
+    }
+  }, [preFilledEmail, setValue])
 
   const {
     register: registerOtp,
@@ -300,6 +310,11 @@ const RegisterPage = () => {
             Already have an account?{' '}
             <Link to="/login" style={{ color: '#0F8B8D', fontWeight: 600 }}>
               Sign in
+            </Link>
+          </Typography>
+          <Typography textAlign="center" mt={2} variant="body2">
+            <Link to="/landing" style={{ color: '#0F8B8D', fontWeight: 500 }}>
+              ← Back to Home
             </Link>
           </Typography>
         </CardContent>

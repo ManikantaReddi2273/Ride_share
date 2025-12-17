@@ -5,6 +5,7 @@ import rideReducer from '../features/rides/rideSlice'
 import paymentReducer from '../features/payments/paymentSlice'
 import notificationReducer from '../features/notifications/notificationSlice'
 import reviewReducer from '../features/reviews/reviewSlice'
+import adminReducer from '../features/admin/adminSlice'
 import { setupInterceptors } from '../api/apiClient'
 
 const store = configureStore({
@@ -14,6 +15,7 @@ const store = configureStore({
     payments: paymentReducer,
     notifications: notificationReducer,
     reviews: reviewReducer,
+    admin: adminReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

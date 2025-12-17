@@ -2,8 +2,10 @@ package com.ridesharing.userservice.controller;
 
 import com.ridesharing.userservice.dto.ApiResponse;
 import com.ridesharing.userservice.dto.AuthResponse;
+import com.ridesharing.userservice.dto.ForgotPasswordRequest;
 import com.ridesharing.userservice.dto.LoginRequest;
 import com.ridesharing.userservice.dto.RegisterRequest;
+import com.ridesharing.userservice.dto.ResetPasswordRequest;
 import com.ridesharing.userservice.dto.VerifyOtpRequest;
 import com.ridesharing.userservice.service.AuthService;
 import jakarta.validation.Valid;
@@ -60,6 +62,26 @@ public class AuthController {
     @PostMapping("/verify-otp")
     public ResponseEntity<ApiResponse> verifyOtp(@Valid @RequestBody VerifyOtpRequest request) {
         ApiResponse response = authService.verifyOtp(request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    /**
+     * Send OTP to email for password reset.
+     * POST /api/users/forgot-password
+     */
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        ApiResponse response = authService.forgotPassword(request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    /**
+     * Reset password after verifying OTP.
+     * POST /api/users/reset-password
+     */
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        ApiResponse response = authService.resetPassword(request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }

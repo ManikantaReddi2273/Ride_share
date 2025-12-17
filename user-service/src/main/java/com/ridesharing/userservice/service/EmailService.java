@@ -41,5 +41,30 @@ public class EmailService {
             log.error("Failed to send OTP email to {}: {}", to, ex.getMessage());
         }
     }
+
+    /**
+     * Send password reset OTP to the given recipient.
+     *
+     * @param to  recipient email
+     * @param otp numeric OTP
+     */
+    @Async("mailExecutor")
+    public void sendPasswordResetEmail(String to, String otp) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(to);
+        message.setSubject("Smart Ride Sharing - Password Reset OTP");
+        message.setText(String.format(
+                "Dear user,%n%nYou requested to reset your password.%n%nYour password reset code is %s.%nThis code expires in 10 minutes.%n%n"
+                        + "If you did not request a password reset, please ignore this email and your password will remain unchanged.%n%n"
+                        + "Regards,%nSmart Ride Sharing Team",
+                otp));
+
+        try {
+            mailSender.send(message);
+            log.info("Password reset OTP email sent successfully to {}", to);
+        } catch (Exception ex) {
+            log.error("Failed to send password reset OTP email to {}: {}", to, ex.getMessage());
+        }
+    }
 }
 

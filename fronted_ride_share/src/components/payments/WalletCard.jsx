@@ -60,11 +60,39 @@ const WalletCard = ({ userId }) => {
   }
 
   return (
-    <Card>
+    <Card
+      sx={{
+        boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        animation: 'fadeInUp 0.6s ease-out 0.4s both',
+        '&:hover': {
+          transform: 'translateY(-4px)',
+          boxShadow: '0 8px 24px rgba(15, 139, 141, 0.15)',
+        },
+        '@keyframes fadeInUp': {
+          from: {
+            opacity: 0,
+            transform: 'translateY(30px)',
+          },
+          to: {
+            opacity: 1,
+            transform: 'translateY(0)',
+          },
+        },
+      }}
+    >
       <CardContent>
         <Stack spacing={2}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <AccountBalanceWallet color="primary" />
+            <AccountBalanceWallet
+              color="primary"
+              sx={{
+                transition: 'transform 0.3s ease',
+                '&:hover': {
+                  transform: 'scale(1.2) rotate(10deg)',
+                },
+              }}
+            />
             <Typography variant="h6" fontWeight={600}>
               Wallet Balance
             </Typography>
@@ -90,7 +118,7 @@ const WalletCard = ({ userId }) => {
                     Recent Transactions
                   </Typography>
                   <Stack spacing={1}>
-                    {walletTransactions.slice(0, 3).map((transaction) => (
+                    {walletTransactions.slice(0, 3).map((transaction, index) => (
                       <Box
                         key={transaction.id}
                         sx={{
@@ -100,6 +128,23 @@ const WalletCard = ({ userId }) => {
                           display: 'flex',
                           justifyContent: 'space-between',
                           alignItems: 'center',
+                          transition: 'all 0.3s ease',
+                          animation: `slideInRight 0.5s ease-out ${0.5 + index * 0.1}s both`,
+                          '&:hover': {
+                            bgcolor: 'rgba(15, 139, 141, 0.08)',
+                            transform: 'translateX(4px)',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                          },
+                          '@keyframes slideInRight': {
+                            from: {
+                              opacity: 0,
+                              transform: 'translateX(-20px)',
+                            },
+                            to: {
+                              opacity: 1,
+                              transform: 'translateX(0)',
+                            },
+                          },
                         }}
                       >
                         <Box>

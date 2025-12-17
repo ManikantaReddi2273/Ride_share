@@ -37,7 +37,9 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     private static final List<String> PUBLIC_ENDPOINTS = Arrays.asList(
         "/api/users/register",
         "/api/users/login",
-        "/api/users/verify-otp"
+        "/api/users/verify-otp",
+        "/api/users/forgot-password",
+        "/api/users/reset-password"
     );
     
     /**
@@ -74,6 +76,15 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             String email = jwtUtil.extractEmail(token);
             String role = jwtUtil.extractRole(token);
             
+            // Check if accessing admin endpoints - require ADMIN role
+            if (isAdminEndpoint(path)) {
+                if (!"ADMIN".equals(role)) {
+                    logger.warn("Non-admin user {} attempted to access admin endpoint: {}", email, path);
+                    return onError(exchange, "Access denied. Admin privileges required.", HttpStatus.FORBIDDEN);
+                }
+                logger.debug("Admin endpoint accessed by admin user: {} (ID: {})", email, userId);
+            }
+            
             // Add user information to request headers for downstream services
             ServerHttpRequest modifiedRequest = request.mutate()
                     .header("X-User-Id", String.valueOf(userId))
@@ -103,7 +114,9 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         if (path.startsWith("/api/rides/search") || 
             path.startsWith("/api/users/register") || 
             path.startsWith("/api/users/login") ||
-            path.startsWith("/api/users/verify-otp")) {
+            path.startsWith("/api/users/verify-otp") ||
+            path.startsWith("/api/users/forgot-password") ||
+            path.startsWith("/api/users/reset-password")) {
             return true;
         }
         
@@ -114,6 +127,16 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         }
         
         return false;
+    }
+    
+    /**
+     * Check if the path is an admin-only endpoint
+     */
+    private boolean isAdminEndpoint(String path) {
+        return path.startsWith("/api/users/admin") || 
+               path.startsWith("/api/rides/admin") ||
+               path.startsWith("/api/payments/admin") ||
+               path.startsWith("/api/admin");
     }
     
     /**
