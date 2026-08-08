@@ -49,6 +49,12 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getURI().getPath();
+
+        // Always allow CORS preflight through (no JWT)
+        if (request.getMethod() != null
+                && "OPTIONS".equalsIgnoreCase(request.getMethod().name())) {
+            return chain.filter(exchange);
+        }
         
         // Check if the path is a public endpoint
         if (isPublicEndpoint(path, exchange)) {
