@@ -57,5 +57,11 @@ public class AuthResponse {
      * Informational message for the client (OTP instructions, etc.)
      */
     private String message;
+
+    /**
+     * OTP shown only when email delivery fails (Render blocks SMTP).
+     * Frontend displays this so users can still verify.
+     */
+    private String otpHint;
 }
 

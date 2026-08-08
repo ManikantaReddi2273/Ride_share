@@ -53,6 +53,7 @@ const RegisterPage = () => {
     registrationMessage,
     resendStatus,
     resendMessage,
+    otpHint,
   } = useSelector((state) => state.auth)
 
   const {
@@ -282,6 +283,12 @@ const RegisterPage = () => {
                   {verificationStatus === 'succeeded' && verificationMessage && (
                     <Alert severity="success" sx={{ mb: 2 }}>
                       {verificationMessage}
+                    </Alert>
+                  )}
+                  {otpHint && (
+                    <Alert severity="warning" sx={{ mb: 2 }}>
+                      Email delivery is blocked on the free server. Use this OTP:{' '}
+                      <strong style={{ fontSize: '1.25rem', letterSpacing: 2 }}>{otpHint}</strong>
                     </Alert>
                   )}
                   {verificationError && (

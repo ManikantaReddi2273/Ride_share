@@ -14,6 +14,7 @@ import com.ridesharing.userservice.exception.UnauthorizedException;
 import com.ridesharing.userservice.repository.*;
 import com.ridesharing.userservice.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,6 +52,9 @@ public class AuthService {
     @Autowired
     private EmailService emailService;
 
+    @Value("${app.otp.reveal-on-mail-failure:true}")
+    private boolean revealOtpOnMailFailure;
+
     private static final SecureRandom OTP_RANDOM = new SecureRandom();
     private static final int OTP_TTL_MINUTES = 10;
     
@@ -82,7 +86,7 @@ public class AuthService {
         pendingRegistration.setExpiresAt(expiresAt);
         pendingRegistrationRepository.saveAndFlush(pendingRegistration);
 
-        emailService.sendOtpEmail(email, otp);
+        boolean mailed = emailService.trySendOtpEmail(email, otp);
 
         AuthResponse response = new AuthResponse();
         response.setToken(null);
@@ -93,9 +97,7 @@ public class AuthService {
         response.setRole("PASSENGER");
         response.setExpiresIn(null);
         response.setVerificationRequired(Boolean.TRUE);
-        response.setMessage(
-                "Verification code sent to your email. Enter the 4-digit OTP to activate your account. "
-                        + "You can resend the code if it does not arrive.");
+        applyOtpDeliveryMessage(response, otp, mailed);
         return response;
     }
 
@@ -119,7 +121,7 @@ public class AuthService {
         pending.setExpiresAt(LocalDateTime.now().plusMinutes(OTP_TTL_MINUTES));
         pendingRegistrationRepository.saveAndFlush(pending);
 
-        emailService.sendOtpEmail(email, otp);
+        boolean mailed = emailService.trySendOtpEmail(email, otp);
 
         AuthResponse response = new AuthResponse();
         response.setToken(null);
@@ -128,7 +130,7 @@ public class AuthService {
         response.setName(pending.getName());
         response.setRole("PASSENGER");
         response.setVerificationRequired(Boolean.TRUE);
-        response.setMessage("A new verification code has been sent to your email.");
+        applyOtpDeliveryMessage(response, otp, mailed);
         return response;
     }
     
@@ -226,7 +228,14 @@ public class AuthService {
         user.setVerificationExpiresAt(LocalDateTime.now().plusMinutes(OTP_TTL_MINUTES));
         userRepository.save(user);
 
-        emailService.sendPasswordResetEmail(user.getEmail(), otp);
+        boolean mailed = emailService.trySendPasswordResetEmail(user.getEmail(), otp);
+        if (!mailed) {
+            if (revealOtpOnMailFailure) {
+                return new ApiResponse(true,
+                        "Email delivery unavailable. Use this reset OTP: " + otp + " (expires in 10 minutes).");
+            }
+            throw new BadRequestException("Could not send reset OTP email. Please try again later.");
+        }
 
         return new ApiResponse(true, "Reset OTP sent to your email. It expires in 10 minutes.");
     }
@@ -257,6 +266,27 @@ public class AuthService {
         userRepository.save(user);
 
         return new ApiResponse(true, "Password reset successful. You can now log in with your new password.");
+    }
+
+    private void applyOtpDeliveryMessage(AuthResponse response, String otp, boolean mailed) {
+        if (mailed) {
+            response.setMessage(
+                    "Verification code sent to your email. Enter the 4-digit OTP to activate your account. "
+                            + "You can resend the code if it does not arrive.");
+            response.setOtpHint(null);
+            return;
+        }
+        if (revealOtpOnMailFailure) {
+            // Render free blocks SMTP — still allow registration to complete
+            response.setOtpHint(otp);
+            response.setMessage(
+                    "Email could not be delivered from the server (common on free hosts). "
+                            + "Your OTP is " + otp + ". Enter it below to verify. "
+                            + "Optional: add RESEND_API_KEY on user-service for real emails.");
+            return;
+        }
+        throw new BadRequestException(
+                "Could not send OTP email. Configure RESEND_API_KEY on user-service or try again later.");
     }
 
     private void deletePendingConflicts(String email, String phone) {

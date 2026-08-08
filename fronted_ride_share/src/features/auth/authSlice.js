@@ -22,6 +22,7 @@ const initialState = {
   registrationMessage: null,
   resendStatus: 'idle',
   resendMessage: null,
+  otpHint: null,
 }
 
 const handleError = (error) => {
@@ -160,6 +161,7 @@ const authSlice = createSlice({
       state.verificationMessage = null
       state.verificationError = null
       state.registrationMessage = null
+      state.otpHint = null
       clearAuth()
       setPendingVerificationEmail(null)
     },
@@ -168,6 +170,7 @@ const authSlice = createSlice({
       state.verificationStatus = 'idle'
       state.verificationMessage = null
       state.verificationError = null
+      state.otpHint = null
       setPendingVerificationEmail(null)
     },
   },
@@ -181,6 +184,7 @@ const authSlice = createSlice({
         state.verificationMessage = null
         state.verificationError = null
         state.registrationMessage = null
+        state.otpHint = null
         setPendingVerificationEmail(null)
       })
       .addCase(registerUser.fulfilled, (state, action) => {
@@ -192,6 +196,7 @@ const authSlice = createSlice({
           state.verificationStatus = 'pending'
           state.verificationMessage = payload.message
           state.registrationMessage = payload.message
+          state.otpHint = payload.otpHint || null
           setPendingVerificationEmail(payload.email)
           state.user = null
           state.token = null
@@ -277,6 +282,7 @@ const authSlice = createSlice({
         state.resendStatus = 'succeeded'
         state.resendMessage = action.payload?.message || 'OTP resent successfully. Check your email.'
         state.registrationMessage = state.resendMessage
+        state.otpHint = action.payload?.otpHint || null
         if (action.payload?.email) {
           state.pendingVerificationEmail = action.payload.email
           setPendingVerificationEmail(action.payload.email)
