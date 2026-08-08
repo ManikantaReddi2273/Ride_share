@@ -22,6 +22,13 @@ public final class PostgresDatabaseCreator {
     }
 
     public static void ensureDatabaseExists(String databaseName) {
+        // Neon / managed Postgres: create DBs in the console; skip auto-create
+        if ("false".equalsIgnoreCase(envOrDefault("POSTGRES_AUTO_CREATE", "true"))) {
+            System.out.println("⏭️ Skipping PostgreSQL auto-create for '" + databaseName
+                    + "' (POSTGRES_AUTO_CREATE=false)");
+            return;
+        }
+
         String host = envOrDefault("POSTGRES_HOST", DEFAULT_HOST);
         int port = Integer.parseInt(envOrDefault("POSTGRES_PORT", String.valueOf(DEFAULT_PORT)));
         String username = envOrDefault("POSTGRES_USER", DEFAULT_USER);

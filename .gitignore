@@ -5,19 +5,14 @@
 # --------------------------------------------
 # Secrets & local environment (DO NOT COMMIT)
 # --------------------------------------------
+# Local / deploy secrets (never commit)
 .env
 .env.*
 !.env.example
-*.env
-!.env.example
-
-# Local Spring Boot overrides (put secrets here, not in application.properties)
+!deploy/env.example
+!fronted_ride_share/.env.example
 **/application-local.properties
-**/application-local.yml
-**/application-local.yaml
 **/application-secret.properties
-**/application-prod-local.properties
-**/bootstrap-local.properties
 
 # Credentials / certificates / keystores
 *.pem
@@ -198,6 +193,8 @@ docker-compose.*.local.yml
 # Cursor / IDE screenshot dumps
 assets/
 
-# Local notes
 Development.txt
 *.local.md
+
+# Deploy local secrets on VM / laptop
+deploy/.env
