@@ -189,19 +189,17 @@ Response: 200 OK
 ### Prerequisites
 - Java 17 or higher
 - Maven 3.6+
-- MySQL 8.0+
+- PostgreSQL 14+ (running on localhost:5432)
 - Eureka Server running on port 8761
 
 ### Database Setup
-1. Create MySQL database:
-```sql
-CREATE DATABASE user_db;
-```
+The service auto-creates `user_db` on startup if it does not exist (connects as `postgres` to the default DB).
 
-2. Update `application.properties` with your MySQL credentials:
+Default credentials (override with env vars `POSTGRES_USER` / `POSTGRES_PASSWORD`):
 ```properties
-spring.datasource.username=your_username
-spring.datasource.password=your_password
+spring.datasource.url=jdbc:postgresql://localhost:5432/user_db
+spring.datasource.username=postgres
+spring.datasource.password=reddi2273
 ```
 
 ### Build and Run

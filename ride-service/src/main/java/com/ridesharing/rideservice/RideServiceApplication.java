@@ -1,5 +1,6 @@
 package com.ridesharing.rideservice;
 
+import com.ridesharing.rideservice.config.PostgresDatabaseCreator;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.openfeign.EnableFeignClients;
@@ -20,7 +21,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * - Ride reminders (scheduled notifications)
  * 
  * Port: 8082
- * Database: ride_db
+ * Database: ride_db (PostgreSQL)
  * 
  * Note: Eureka Client is auto-configured when spring-cloud-starter-netflix-eureka-client 
  * dependency is present. No @EnableEurekaClient annotation needed in Spring Cloud 2023.0.0+
@@ -36,7 +37,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class RideServiceApplication {
 
     public static void main(String[] args) {
+        PostgresDatabaseCreator.ensureDatabaseExists("ride_db");
         SpringApplication.run(RideServiceApplication.class, args);
     }
 }
-

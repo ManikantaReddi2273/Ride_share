@@ -17,7 +17,7 @@ This microservice handles all payment-related operations including:
 
 ## Database
 
-**payment_db** (MySQL)
+**payment_db** (PostgreSQL — auto-created on startup if missing)
 
 ## Configuration
 
@@ -83,12 +83,12 @@ payment.platform.fee.percentage=10.0  # Platform commission (10%)
 - Spring Boot 3.2.0
 - Spring Cloud 2023.0.0
 - Razorpay Java SDK 1.4.3
-- MySQL Connector
+- PostgreSQL Driver
 - Eureka Client
 
 ## Running the Service
 
-1. Ensure MySQL is running and `payment_db` database exists
+1. Ensure PostgreSQL is running on localhost:5432 (`payment_db` is auto-created if missing)
 2. Update Razorpay credentials in `application.properties`
 3. Ensure Eureka Server is running on port 8761
 4. Run: `mvn spring-boot:run`

@@ -104,17 +104,14 @@ Authorization: Bearer <token>
 ### Prerequisites
 - Java 17 or higher
 - Maven 3.6+
-- MySQL 8.0+
+- PostgreSQL 14+ (running on localhost:5432)
 - Eureka Server running on port 8761
 - User Service running on port 8081
 
 ### Database Setup
-1. Create MySQL database:
-```sql
-CREATE DATABASE ride_db;
-```
+The service auto-creates `ride_db` on startup if it does not exist.
 
-2. Update `application.properties` with your MySQL credentials if needed.
+Default: `jdbc:postgresql://localhost:5432/ride_db` with user `postgres` (env: `POSTGRES_USER` / `POSTGRES_PASSWORD`).
 
 ### Build and Run
 ```bash

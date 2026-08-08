@@ -1,5 +1,6 @@
 package com.ridesharing.paymentservice;
 
+import com.ridesharing.paymentservice.config.PostgresDatabaseCreator;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.openfeign.EnableFeignClients;
@@ -18,7 +19,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
  * - Refund processing
  * 
  * Port: 8084
- * Database: payment_db
+ * Database: payment_db (PostgreSQL)
  * 
  * @author Smart Ride Sharing System
  * @version 1.0.0
@@ -30,6 +31,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 public class PaymentServiceApplication {
 
     public static void main(String[] args) {
+        PostgresDatabaseCreator.ensureDatabaseExists("payment_db");
         SpringApplication.run(PaymentServiceApplication.class, args);
     }
 }

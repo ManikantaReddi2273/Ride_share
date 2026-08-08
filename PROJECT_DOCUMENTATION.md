@@ -54,7 +54,7 @@ The "Smart Ride Sharing System" is a website-based platform where vehicle owners
 3. **Service Discovery**: Eureka Server for automatic service registration and discovery
 4. **Inter-Service Communication**: Feign Client for synchronous RESTful communication
 5. **Event-Driven Architecture**: Asynchronous notifications where appropriate
-6. **Database per Service**: Each service has its own MySQL database/schema
+6. **Database per Service**: Each service has its own PostgreSQL database
 7. **Centralized Configuration**: Spring Cloud Config for configuration management
 8. **Circuit Breaker Pattern**: Resilience4j for fault tolerance
 
@@ -102,7 +102,7 @@ The "Smart Ride Sharing System" is a website-based platform where vehicle owners
 - **API Gateway**: Spring Cloud Gateway
 - **Inter-Service Communication**: Spring Cloud OpenFeign
 - **Security**: Spring Security + JWT (JSON Web Tokens)
-- **Database**: MySQL 8.0
+- **Database**: PostgreSQL
 - **ORM**: Spring Data JPA / Hibernate
 - **Configuration Management**: Spring Cloud Config Server
 - **Circuit Breaker**: Resilience4j
@@ -485,7 +485,7 @@ The system is divided into **8 core microservices** plus **1 API Gateway** and *
 
 ### Database per Service Strategy
 
-Each microservice has its own MySQL database to ensure:
+Each microservice has its own PostgreSQL database to ensure:
 - **Data Isolation**: Services don't share databases
 - **Independent Scaling**: Each database can be scaled independently
 - **Technology Flexibility**: Different databases can be used if needed
@@ -971,7 +971,7 @@ All microservices register themselves with Eureka Server on startup:
 ### Development Environment
 - Local development with Docker Compose
 - Each service runs in separate container
-- MySQL databases in separate containers
+- PostgreSQL databases in separate containers
 - Eureka Server in container
 - API Gateway in container
 

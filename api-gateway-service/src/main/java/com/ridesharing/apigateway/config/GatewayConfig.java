@@ -10,13 +10,13 @@ import org.springframework.context.annotation.Configuration;
  * Defines routing rules for all microservices
  * Routes requests to appropriate services based on URL patterns
  */
+ 
 @Configuration
 public class GatewayConfig {
-    
+
     /**
      * Configure routes for all microservices
      * Uses service discovery (Eureka) to find service instances
-     * 
      * Route Patterns:
      * - /api/users/** → User Service (port 8081)
      * - /api/rides/** → Ride Service (port 8082) - Future
@@ -63,7 +63,7 @@ public class GatewayConfig {
                 // .route("notification-service", r -> r
                 //     .path("/api/notifications/**")
                 //     .uri("lb://notification-service")
-                // )
+                // ) 
                 
                 // Review Service Route (Future)
                 // .route("review-service", r -> r

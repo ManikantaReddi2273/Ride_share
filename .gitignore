@@ -1,29 +1,50 @@
 # ============================================
-# Smart Ride Sharing System - Root .gitignore
+# RIDE_SHARING - Root .gitignore (deploy-ready)
 # ============================================
 
-# ============================================
-# Java / Spring Boot
-# ============================================
+# --------------------------------------------
+# Secrets & local environment (DO NOT COMMIT)
+# --------------------------------------------
+.env
+.env.*
+!.env.example
+*.env
+!.env.example
+
+# Local Spring Boot overrides (put secrets here, not in application.properties)
+**/application-local.properties
+**/application-local.yml
+**/application-local.yaml
+**/application-secret.properties
+**/application-prod-local.properties
+**/bootstrap-local.properties
+
+# Credentials / certificates / keystores
+*.pem
+*.p12
+*.jks
+*.keystore
+credentials.json
+secrets.json
+**/secrets/
+**/credentials/
+
+# --------------------------------------------
+# Java / Maven / Spring Boot
+# --------------------------------------------
 *.class
 *.jar
 *.war
 *.ear
 *.nar
+!**/maven-wrapper.jar
 *.log
-*.ctxt
-.mtj.tmp/
-*.tmp
-*.bak
-*.swp
-*~.nib
-local.properties
-.settings/
-.loadpath
-.recommenders
+*.log.*
+hs_err_pid*
+replay_pid*
 
-# Maven
 target/
+**/target/
 pom.xml.tag
 pom.xml.releaseBackup
 pom.xml.versionsBackup
@@ -32,206 +53,151 @@ release.properties
 dependency-reduced-pom.xml
 buildNumber.properties
 .mvn/timing.properties
-.mvn/wrapper/maven-wrapper.jar
+.mvn/wrapper/maven-wrapper.jar.bak
 
-# ============================================
-# React / Node.js / Frontend
-# ============================================
+# Spring Boot
+spring-boot-devtools.properties
+
+# --------------------------------------------
+# Frontend (React / Vite / Node)
+# --------------------------------------------
 node_modules/
+**/node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-.pnpm-debug.log*
+.pnpm-store/
 
-# Build outputs
 dist/
 dist-ssr/
 build/
-*.local
-
-# Vite
+**/dist/
 .vite/
 vite.config.js.timestamp-*
+*.local
 
-# ============================================
-# IDE / Editor
-# ============================================
-# IntelliJ IDEA
+# Frontend env (Vite)
+fronted_ride_share/.env
+fronted_ride_share/.env.*
+!fronted_ride_share/.env.example
+
+# --------------------------------------------
+# IDE / Editors
+# --------------------------------------------
 .idea/
+**/.idea/
 *.iws
 *.iml
 *.ipr
 out/
 
-# Eclipse
-.metadata/
-.classpath
-.project
-.settings/
-bin/
-tmp/
-*.tmp
-*.bak
-*.swp
-*~.nib
-local.properties
-.loadpath
-.recommenders
-
-# VS Code
 .vscode/
+**/.vscode/
 !.vscode/extensions.json
 *.code-workspace
 
-# NetBeans
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
+.classpath
+.project
+.settings/
+**/.settings/
+.metadata/
+**/.metadata/
+bin/
+.apt_generated
+.factorypath
+.springBeans
+.sts4-cache
+.recommenders/
+.loadpath
 
-# ============================================
-# OS Files
-# ============================================
-# macOS
+# NetBeans
+**/nbproject/private/
+**/nbbuild/
+**/nbdist/
+.nb-gradle/
+
+# Cursor
+.cursor/
+.cursorignore
+
+# --------------------------------------------
+# OS
+# --------------------------------------------
 .DS_Store
 .AppleDouble
 .LSOverride
-Icon
 ._*
-.DocumentRevisions-V100
-.fseventsd
 .Spotlight-V100
-.TemporaryItems
 .Trashes
-.VolumeIcon.icns
-.com.apple.timemachine.donotpresent
-.AppleDB
-.AppleDesktop
-Network Trash Folder
-Temporary Items
-.apdisk
-
-# Windows
 Thumbs.db
-Thumbs.db:encryptable
 ehthumbs.db
-ehthumbs_vista.db
-*.stackdump
-[Dd]esktop.ini
+Desktop.ini
 $RECYCLE.BIN/
-*.cab
-*.msi
-*.msix
-*.msm
-*.msp
 *.lnk
-
-# Linux
 *~
-.fuse_hidden*
-.directory
-.Trash-*
-.nfs*
 
-# ============================================
-# Logs
-# ============================================
+# --------------------------------------------
+# Logs / temp / cache
+# --------------------------------------------
 logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-*.log.*
+**/logs/
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~.nib
+.cache/
+**/.cache/
+.parcel-cache/
+tmp/
+temp/
 
-# ============================================
-# Environment / Config
-# ============================================
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-*.env
-*.env.*
-!.env.example
-
-# ============================================
-# Database
-# ============================================
-*.db
-*.sqlite
-*.sqlite3
-*.db-shm
-*.db-wal
-
-# ============================================
-# Testing
-# ============================================
+# --------------------------------------------
+# Test / coverage
+# --------------------------------------------
 coverage/
 .nyc_output/
 *.lcov
-.coverage
 htmlcov/
 .pytest_cache/
-.tox/
-.hypothesis/
+test-output/
+surefire-reports/
+failsafe-reports/
 
-# ============================================
-# Temporary / Cache
-# ============================================
-*.cache
-.cache/
-.parcel-cache/
-.next/
-.nuxt/
-.vuepress/dist/
-.serverless/
-.fusebox/
-.dynamodb/
-.tern-port
-.tern-project
-*.tsbuildinfo
+# --------------------------------------------
+# Databases (local dumps / sqlite)
+# --------------------------------------------
+*.db
+*.sqlite
+*.sqlite3
+*.dump
+*.sql.bak
 
-# ============================================
-# Large Files / Media (if accidentally added)
-# ============================================
+# --------------------------------------------
+# Docker / deploy local overrides
+# --------------------------------------------
+docker-compose.override.yml
+docker-compose.*.local.yml
+.docker/
+
+# --------------------------------------------
+# Archives / media (accidental adds)
+# --------------------------------------------
 *.zip
 *.tar
 *.tar.gz
 *.rar
 *.7z
-*.mp4
-*.avi
-*.mov
-*.wmv
-*.flv
-*.webm
-*.mkv
 
-# ============================================
-# Fonts (if too large, uncomment below)
-# ============================================
-# font/
-# *.ttf
-# *.otf
-# *.woff
-# *.woff2
+# --------------------------------------------
+# Project-specific (not part of the app)
+# --------------------------------------------
+# Cursor / IDE screenshot dumps
+assets/
 
-# ============================================
-# Project Specific
-# ============================================
-# Test files (if not needed in repo)
-# test-*.html
-# test-*.js
-# test-*.ps1
-
-# Assets (if too large)
-# assets/*.png
-# assets/*.jpg
-# assets/*.jpeg
-# assets/*.gif
+# Local notes
+Development.txt
+*.local.md
