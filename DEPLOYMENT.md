@@ -1,47 +1,35 @@
-# Deployment Guide — Neon + Railway + Vercel
+# Deployment Guide — Neon + Render (free) + Vercel
 
 | Layer | Platform |
 |-------|----------|
-| Database | **Neon** (PostgreSQL) |
-| Backend | **Railway** (5 Docker services) |
-| Frontend | **Vercel** |
+| Database | **Neon** (PostgreSQL) — free |
+| Backend | **Render** (5 free Web Services) |
+| Frontend | **Vercel** — free |
 
-Your repo already has Dockerfiles + `railway.toml` per service.
-
-> **Security:** If you pasted a Neon password in chat, **rotate it** in Neon → Credentials → reset password, then use the new password in Railway.
+> Free Render services **sleep when idle**. First request after sleep can take 1–2 minutes. Wake Eureka + all services before demoing (open each `*.onrender.com` once).
 
 ---
 
 ## Architecture
 
 ```
-Browser → Vercel (React)
-            │
-            ├─ REST → https://<gateway>.up.railway.app/api/**
-            └─ WS   → https://<ride>.up.railway.app/ws
+Browser → Vercel
+            ├─ REST → https://api-gateway-xxxx.onrender.com/api/**
+            └─ WS   → https://ride-service-xxxx.onrender.com/ws
                         │
-                   Railway private network
-                   eureka / user / ride / payment / gateway
+              Render free Web Services
+              eureka / gateway / user / ride / payment
                         │
                       Neon
-                 user_db / ride_db / payment_db
+               user_db / ride_db / payment_db
 ```
 
 ---
 
-## STEP 1 — Neon databases (you already have a project)
+## STEP 1 — Neon (database)
 
-From your connection string:
-
-| Field | Value |
-|-------|--------|
-| Host | `ep-weathered-cloud-axhpd4hu.c-4.us-east-2.aws.neon.tech` |
-| User | `neondb_owner` |
-| Default DB | `neondb` (not used by the app) |
-
-### 1.1 Create the 3 app databases
-
-Neon SQL Editor → run (one at a time if needed):
+1. https://console.neon.tech → your project  
+2. SQL Editor — create databases:
 
 ```sql
 CREATE DATABASE user_db;
@@ -49,9 +37,9 @@ CREATE DATABASE ride_db;
 CREATE DATABASE payment_db;
 ```
 
-(Or use `deploy/neon-create-databases.sql`)
+3. From **Connect**, note Host / User / Password.
 
-### 1.2 JDBC URLs for Railway
+**JDBC URLs** (replace HOST if different):
 
 ```text
 jdbc:postgresql://ep-weathered-cloud-axhpd4hu.c-4.us-east-2.aws.neon.tech/user_db?sslmode=require
@@ -59,133 +47,94 @@ jdbc:postgresql://ep-weathered-cloud-axhpd4hu.c-4.us-east-2.aws.neon.tech/ride_d
 jdbc:postgresql://ep-weathered-cloud-axhpd4hu.c-4.us-east-2.aws.neon.tech/payment_db?sslmode=require
 ```
 
-Password = your Neon password (from Connect panel / Credentials).
+User: `neondb_owner`  
+Password: from Neon Connect (rotate if you pasted it publicly)
 
 ---
 
-## STEP 2 — Railway backend (do this in the browser)
+## STEP 2 — Render (backend) — YOU do this in the browser
 
-### 2.1 Create project
+### 2.1 Blueprint deploy
 
-1. Go to https://railway.app → Login with GitHub  
-2. **New Project** → **Deploy from GitHub repo** → `ManikantaReddi2273/Ride_share`  
-3. Empty project is fine if it asks to pick a path — we add services manually.
+1. Push is already on GitHub: `ManikantaReddi2273/Ride_share` (includes `render.yaml`)  
+2. Go to https://dashboard.render.com  
+3. **New +** → **Blueprint**  
+4. Connect GitHub → select **Ride_share** → apply `render.yaml`  
+5. Render creates 5 free Web Services:
+   - `eureka-server`
+   - `user-service`
+   - `ride-service`
+   - `payment-service`
+   - `api-gateway-service`
 
-### 2.2 Add 5 services (same repo, different root folders)
+### 2.2 Fill secret env vars (Blueprint marks `sync: false`)
 
-For **each** service below: **+ New** → **GitHub Repo** → same repo → set **Root Directory**:
-
-| Railway service name (set exactly) | Root Directory |
-|------------------------------------|----------------|
-| `eureka-server` | `eureka-server` |
-| `api-gateway-service` | `api-gateway-service` |
-| `user-service` | `user-service` |
-| `ride-service` | `ride-service` |
-| `payment-service` | `payment-service` |
-
-Each folder has a `Dockerfile` + `railway.toml`. Railway will build with Docker.
-
-**Deploy order tip:** deploy `eureka-server` first and wait until healthy, then the others.
-
-### 2.3 Shared variables (Project → Variables) OR per-service
-
-Set these on **every** service that needs them (or use Railway shared variables):
-
-#### All Java services
-
-```env
-EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server.railway.internal:8761/eureka/
-EUREKA_INSTANCE_PREFER_IP_ADDRESS=false
-JWT_SECRET=pick-a-long-random-secret
-JAVA_OPTS=-Xms256m -Xmx512m
-```
-
-#### Eureka only
-
-```env
-EUREKA_INSTANCE_HOSTNAME=eureka-server.railway.internal
-JAVA_OPTS=-Xms256m -Xmx384m
-```
+For each service that asks, set:
 
 #### user-service
-
-```env
-POSTGRES_AUTO_CREATE=false
-SPRING_DATASOURCE_URL=jdbc:postgresql://ep-weathered-cloud-axhpd4hu.c-4.us-east-2.aws.neon.tech/user_db?sslmode=require
-SPRING_DATASOURCE_USERNAME=neondb_owner
-SPRING_DATASOURCE_PASSWORD=<YOUR_NEON_PASSWORD>
-SPRING_MAIL_USERNAME=<gmail>
-SPRING_MAIL_PASSWORD=<gmail-app-password>
-JWT_SECRET=<same as gateway>
-EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server.railway.internal:8761/eureka/
-EUREKA_INSTANCE_PREFER_IP_ADDRESS=false
-EUREKA_INSTANCE_HOSTNAME=user-service.railway.internal
-```
+| Key | Value |
+|-----|--------|
+| `SPRING_DATASOURCE_URL` | `jdbc:postgresql://HOST/user_db?sslmode=require` |
+| `SPRING_DATASOURCE_USERNAME` | `neondb_owner` |
+| `SPRING_DATASOURCE_PASSWORD` | Neon password |
+| `JWT_SECRET` | long random string (same on gateway) |
+| `SPRING_MAIL_USERNAME` | Gmail |
+| `SPRING_MAIL_PASSWORD` | Gmail app password |
+| `EUREKA_CLIENT_SERVICEURL_DEFAULTZONE` | `https://<eureka-server-url>/eureka/` |
 
 #### ride-service
-
-```env
-POSTGRES_AUTO_CREATE=false
-SPRING_DATASOURCE_URL=jdbc:postgresql://ep-weathered-cloud-axhpd4hu.c-4.us-east-2.aws.neon.tech/ride_db?sslmode=require
-SPRING_DATASOURCE_USERNAME=neondb_owner
-SPRING_DATASOURCE_PASSWORD=<YOUR_NEON_PASSWORD>
-CORS_ALLOWED_ORIGINS=https://YOUR_VERCEL_URL.vercel.app,http://localhost:5173
-GOOGLE_MAPS_API_KEY=<ors-key>
-SPRING_MAIL_USERNAME=<gmail>
-SPRING_MAIL_PASSWORD=<gmail-app-password>
-EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server.railway.internal:8761/eureka/
-EUREKA_INSTANCE_PREFER_IP_ADDRESS=false
-EUREKA_INSTANCE_HOSTNAME=ride-service.railway.internal
-JAVA_OPTS=-Xms256m -Xmx768m
-```
+| Key | Value |
+|-----|--------|
+| `SPRING_DATASOURCE_URL` | `.../ride_db?sslmode=require` |
+| `SPRING_DATASOURCE_USERNAME` | `neondb_owner` |
+| `SPRING_DATASOURCE_PASSWORD` | Neon password |
+| `CORS_ALLOWED_ORIGINS` | `https://YOUR.vercel.app,http://localhost:5173` |
+| `GOOGLE_MAPS_API_KEY` | OpenRouteService key |
+| `SPRING_MAIL_*` | same as user |
+| `EUREKA_CLIENT_SERVICEURL_DEFAULTZONE` | `https://<eureka-server-url>/eureka/` |
 
 #### payment-service
-
-```env
-POSTGRES_AUTO_CREATE=false
-SPRING_DATASOURCE_URL=jdbc:postgresql://ep-weathered-cloud-axhpd4hu.c-4.us-east-2.aws.neon.tech/payment_db?sslmode=require
-SPRING_DATASOURCE_USERNAME=neondb_owner
-SPRING_DATASOURCE_PASSWORD=<YOUR_NEON_PASSWORD>
-RAZORPAY_KEY_ID=<key>
-RAZORPAY_KEY_SECRET=<secret>
-RAZORPAY_MODE=TEST
-EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server.railway.internal:8761/eureka/
-EUREKA_INSTANCE_PREFER_IP_ADDRESS=false
-EUREKA_INSTANCE_HOSTNAME=payment-service.railway.internal
-```
+| Key | Value |
+|-----|--------|
+| `SPRING_DATASOURCE_URL` | `.../payment_db?sslmode=require` |
+| `SPRING_DATASOURCE_USERNAME` | `neondb_owner` |
+| `SPRING_DATASOURCE_PASSWORD` | Neon password |
+| `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` | Razorpay test keys |
+| `EUREKA_CLIENT_SERVICEURL_DEFAULTZONE` | `https://<eureka-server-url>/eureka/` |
 
 #### api-gateway-service
+| Key | Value |
+|-----|--------|
+| `JWT_SECRET` | **same** as user-service |
+| `CORS_ALLOWED_ORIGINS` | your Vercel URL |
+| `EUREKA_CLIENT_SERVICEURL_DEFAULTZONE` | `https://<eureka-server-url>/eureka/` |
 
-```env
-JWT_SECRET=<same secret>
-CORS_ALLOWED_ORIGINS=https://YOUR_VERCEL_URL.vercel.app,http://localhost:5173
-EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server.railway.internal:8761/eureka/
-EUREKA_INSTANCE_PREFER_IP_ADDRESS=false
-EUREKA_INSTANCE_HOSTNAME=api-gateway-service.railway.internal
+### 2.3 Eureka URL (important)
+
+1. Open **eureka-server** on Render → copy public URL  
+   Example: `https://eureka-server-xxxx.onrender.com`  
+2. Set on user / ride / payment / gateway:
+
+```text
+EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=https://eureka-server-xxxx.onrender.com/eureka/
 ```
 
-### 2.4 Public domains (required)
+3. Redeploy those 4 services after setting it.
 
-On these services → **Settings → Networking → Generate Domain**:
+### 2.4 Wait for builds
 
-| Service | Why |
-|---------|-----|
-| `api-gateway-service` | Frontend REST (`/api/...`) |
-| `ride-service` | WebSocket (`/ws`) |
+First Docker builds take **10–20+ minutes** each on free tier. Watch **Logs**.  
+Success when you see app started / Tomcat or Netty listening.
 
-Copy the URLs, e.g.:
+### 2.5 Sanity check
 
-- Gateway: `https://api-gateway-service-production-xxxx.up.railway.app`  
-- Ride: `https://ride-service-production-xxxx.up.railway.app`
-
-### 2.5 Check logs
-
-Open each service → **Deployments → View Logs**.  
-Look for: started Tomcat / Netty, Eureka registration, no DB auth errors.
+- Open Eureka URL in browser → dashboard should list services (after they register)  
+- Gateway: `https://api-gateway-xxxx.onrender.com/actuator/health`  
+- Ride: `https://ride-service-xxxx.onrender.com/actuator/health`
 
 ---
 
-## STEP 3 — Vercel frontend
+## STEP 3 — Vercel (frontend)
 
 1. https://vercel.com → Import `ManikantaReddi2273/Ride_share`  
 2. **Root Directory:** `fronted_ride_share`  
@@ -193,58 +142,59 @@ Look for: started Tomcat / Netty, Eureka registration, no DB auth errors.
 
 | Name | Value |
 |------|--------|
-| `VITE_API_BASE_URL` | `https://<your-gateway-domain>/api` |
-| `VITE_WS_URL` | `https://<your-ride-domain>/ws` |
+| `VITE_API_BASE_URL` | `https://api-gateway-xxxx.onrender.com/api` |
+| `VITE_WS_URL` | `https://ride-service-xxxx.onrender.com/ws` |
 | `VITE_STORAGE_SECRET` | any long random string |
 
-4. Deploy → copy Vercel URL (e.g. `https://ride-share-xxx.vercel.app`)  
-5. Update Railway `CORS_ALLOWED_ORIGINS` on **gateway** and **ride-service** to that URL  
-6. Redeploy those two Railway services  
-7. Redeploy Vercel if needed  
+4. Deploy → copy Vercel URL  
+5. Update Render `CORS_ALLOWED_ORIGINS` on **gateway** + **ride** to that Vercel URL → **Manual Deploy**  
+6. Redeploy Vercel if you changed env after first deploy  
 
 ---
 
-## STEP 4 — Smoke test
+## STEP 4 — Demo tip (free tier sleep)
 
-1. Open Vercel URL  
-2. Register → OTP email → Login  
-3. Add vehicle → post ride → search → book (Razorpay test)  
-4. Confirm WebSocket notifications work  
+Before showing the app:
+
+1. Open Eureka URL  
+2. Open gateway `/actuator/health`  
+3. Open user / ride / payment health URLs  
+4. Wait until all are up  
+5. Then open the Vercel site  
 
 ---
 
 ## Checklist
 
-- [ ] Neon: `user_db`, `ride_db`, `payment_db` created  
-- [ ] Railway: 5 services, names match table above  
-- [ ] Env vars set (DB URLs with `sslmode=require`)  
-- [ ] Public domains on gateway + ride  
-- [ ] Vercel root = `fronted_ride_share` + env vars  
-- [ ] CORS updated with Vercel URL  
-- [ ] End-to-end test  
+- [ ] Neon: `user_db`, `ride_db`, `payment_db`  
+- [ ] Render Blueprint applied from this repo  
+- [ ] All secret env vars filled  
+- [ ] `EUREKA_CLIENT_SERVICEURL_DEFAULTZONE` set on 4 services  
+- [ ] Gateway + ride public URLs work  
+- [ ] Vercel env points at gateway + ride  
+- [ ] CORS includes Vercel URL  
+- [ ] End-to-end test (register / login / ride)
 
 ---
 
-## Common failures
+## What I cannot do from Cursor
 
-| Problem | Fix |
-|---------|-----|
-| DB connection refused / SSL | Use `?sslmode=require` and correct DB name |
-| Service not found in Eureka | Service name + `*.railway.internal` hostname; wait for Eureka healthy first |
-| CORS error | Exact Vercel origin in `CORS_ALLOWED_ORIGINS` (https, no trailing `/`) |
-| WS fails | `VITE_WS_URL` must be ride public URL + `/ws` |
-| Out of memory | Raise Railway plan RAM or lower `JAVA_OPTS` |
-| Free credits exhausted | Railway trial credits run out → add card / upgrade |
+- Log into your Render / Vercel / Neon accounts  
+- Click “Apply Blueprint” or paste your Neon password  
+
+You must complete Steps 1–3 in the browser.
 
 ---
 
-## What you still must do yourself
+## Troubleshooting
 
-1. Create the 3 Neon databases (SQL above)  
-2. Log into Railway + create 5 services from GitHub  
-3. Paste env vars (including Neon password)  
-4. Generate public domains  
-5. Deploy Vercel with gateway/ride URLs  
-6. Fix CORS after you know the Vercel URL  
+| Issue | Fix |
+|-------|-----|
+| Out of memory / crash | Free = 512MB; `JAVA_OPTS` already low; don’t raise heap |
+| 502 / service unavailable | Service sleeping — hit health URL and wait |
+| Eureka empty | Wrong `EUREKA_CLIENT_SERVICEURL_DEFAULTZONE`; use `https://.../eureka/` |
+| CORS error | Exact Vercel origin in `CORS_ALLOWED_ORIGINS` |
+| DB SSL error | URL must end with `?sslmode=require` |
+| Build failed | Check Render logs; retry deploy |
 
-I cannot finish Railway/Vercel deploys from here without your logged-in browser session (`railway login` is required locally).
+Full env template: `deploy/render.env.example`

@@ -1,0 +1,163 @@
+# Render Blueprint — Neon + Render + Vercel
+# https://dashboard.render.com → New → Blueprint → connect this repo
+#
+# Free tier: services sleep when idle (cold starts). RAM ~512MB → keep JAVA_OPTS low.
+# After first deploy: copy Eureka public URL into EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+# for gateway/user/ride/payment (or set via Env Group). See DEPLOYMENT.md.
+
+services:
+  - type: web
+    name: eureka-server
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./eureka-server/Dockerfile
+    dockerContext: ./eureka-server
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: JAVA_OPTS
+        value: "-Xms64m -Xmx200m"
+      - key: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+        value: "false"
+      - key: EUREKA_NON_SECURE_PORT_ENABLED
+        value: "false"
+      - key: EUREKA_SECURE_PORT_ENABLED
+        value: "true"
+      - key: EUREKA_INSTANCE_SECURE_PORT
+        value: "443"
+
+  - type: web
+    name: user-service
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./user-service/Dockerfile
+    dockerContext: ./user-service
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: JAVA_OPTS
+        value: "-Xms64m -Xmx200m"
+      - key: POSTGRES_AUTO_CREATE
+        value: "false"
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: SPRING_MAIL_USERNAME
+        sync: false
+      - key: SPRING_MAIL_PASSWORD
+        sync: false
+      - key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+        sync: false
+      - key: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+        value: "false"
+      - key: EUREKA_NON_SECURE_PORT_ENABLED
+        value: "false"
+      - key: EUREKA_SECURE_PORT_ENABLED
+        value: "true"
+      - key: EUREKA_INSTANCE_SECURE_PORT
+        value: "443"
+
+  - type: web
+    name: ride-service
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./ride-service/Dockerfile
+    dockerContext: ./ride-service
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: JAVA_OPTS
+        value: "-Xms64m -Xmx250m"
+      - key: POSTGRES_AUTO_CREATE
+        value: "false"
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false
+      - key: SPRING_MAIL_USERNAME
+        sync: false
+      - key: SPRING_MAIL_PASSWORD
+        sync: false
+      - key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+        sync: false
+      - key: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+        value: "false"
+      - key: EUREKA_NON_SECURE_PORT_ENABLED
+        value: "false"
+      - key: EUREKA_SECURE_PORT_ENABLED
+        value: "true"
+      - key: EUREKA_INSTANCE_SECURE_PORT
+        value: "443"
+
+  - type: web
+    name: payment-service
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./payment-service/Dockerfile
+    dockerContext: ./payment-service
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: JAVA_OPTS
+        value: "-Xms64m -Xmx200m"
+      - key: POSTGRES_AUTO_CREATE
+        value: "false"
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_MODE
+        value: "TEST"
+      - key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+        sync: false
+      - key: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+        value: "false"
+      - key: EUREKA_NON_SECURE_PORT_ENABLED
+        value: "false"
+      - key: EUREKA_SECURE_PORT_ENABLED
+        value: "true"
+      - key: EUREKA_INSTANCE_SECURE_PORT
+        value: "443"
+
+  - type: web
+    name: api-gateway-service
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./api-gateway-service/Dockerfile
+    dockerContext: ./api-gateway-service
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: JAVA_OPTS
+        value: "-Xms64m -Xmx200m"
+      - key: JWT_SECRET
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+        sync: false
+      - key: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+        value: "false"
+      - key: EUREKA_NON_SECURE_PORT_ENABLED
+        value: "false"
+      - key: EUREKA_SECURE_PORT_ENABLED
+        value: "true"
+      - key: EUREKA_INSTANCE_SECURE_PORT
+        value: "443"
