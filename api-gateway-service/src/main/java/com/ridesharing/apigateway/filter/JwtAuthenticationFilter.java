@@ -38,6 +38,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         "/api/users/register",
         "/api/users/login",
         "/api/users/verify-otp",
+        "/api/users/resend-otp",
         "/api/users/forgot-password",
         "/api/users/reset-password"
     );
@@ -121,6 +122,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             path.startsWith("/api/users/register") || 
             path.startsWith("/api/users/login") ||
             path.startsWith("/api/users/verify-otp") ||
+            path.startsWith("/api/users/resend-otp") ||
             path.startsWith("/api/users/forgot-password") ||
             path.startsWith("/api/users/reset-password")) {
             return true;

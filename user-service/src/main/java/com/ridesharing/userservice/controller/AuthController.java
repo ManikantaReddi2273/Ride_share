@@ -5,6 +5,7 @@ import com.ridesharing.userservice.dto.AuthResponse;
 import com.ridesharing.userservice.dto.ForgotPasswordRequest;
 import com.ridesharing.userservice.dto.LoginRequest;
 import com.ridesharing.userservice.dto.RegisterRequest;
+import com.ridesharing.userservice.dto.ResendOtpRequest;
 import com.ridesharing.userservice.dto.ResetPasswordRequest;
 import com.ridesharing.userservice.dto.VerifyOtpRequest;
 import com.ridesharing.userservice.service.AuthService;
@@ -62,6 +63,16 @@ public class AuthController {
     @PostMapping("/verify-otp")
     public ResponseEntity<ApiResponse> verifyOtp(@Valid @RequestBody VerifyOtpRequest request) {
         ApiResponse response = authService.verifyOtp(request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    /**
+     * Resend registration OTP email.
+     * POST /api/users/resend-otp
+     */
+    @PostMapping("/resend-otp")
+    public ResponseEntity<AuthResponse> resendOtp(@Valid @RequestBody ResendOtpRequest request) {
+        AuthResponse response = authService.resendOtp(request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 

@@ -66,7 +66,8 @@ public class SecurityConfig {
             // Configure authorization rules
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints (no authentication required)
-                .requestMatchers("/api/users/register", "/api/users/login", "/api/users/verify-otp").permitAll()
+                .requestMatchers("/api/users/register", "/api/users/login", "/api/users/verify-otp",
+                        "/api/users/resend-otp").permitAll()
                 .requestMatchers("/api/users/forgot-password", "/api/users/reset-password").permitAll()
                 .requestMatchers("/api/users/*/public", "/api/users/vehicles/*/public").permitAll()
                 .requestMatchers("/actuator/**").permitAll()

@@ -20,6 +20,8 @@ const initialState = {
   verificationMessage: null,
   verificationError: null,
   registrationMessage: null,
+  resendStatus: 'idle',
+  resendMessage: null,
 }
 
 const handleError = (error) => {
@@ -89,6 +91,18 @@ export const verifyOtp = createAsyncThunk(
       console.error('OTP verification error:', error)
       console.error('Error response:', error?.response)
       console.error('Error data:', error?.response?.data)
+      return rejectWithValue(handleError(error))
+    }
+  },
+)
+
+export const resendOtp = createAsyncThunk(
+  'auth/resendOtp',
+  async (payload, { rejectWithValue }) => {
+    try {
+      const { data } = await apiClient.post(endpoints.auth.resendOtp, payload)
+      return data
+    } catch (error) {
       return rejectWithValue(handleError(error))
     }
   },
@@ -252,6 +266,24 @@ const authSlice = createSlice({
       })
       .addCase(verifyOtp.rejected, (state, action) => {
         state.verificationStatus = 'failed'
+        state.verificationError = action.payload
+      })
+      .addCase(resendOtp.pending, (state) => {
+        state.resendStatus = 'loading'
+        state.resendMessage = null
+        state.verificationError = null
+      })
+      .addCase(resendOtp.fulfilled, (state, action) => {
+        state.resendStatus = 'succeeded'
+        state.resendMessage = action.payload?.message || 'OTP resent successfully. Check your email.'
+        state.registrationMessage = state.resendMessage
+        if (action.payload?.email) {
+          state.pendingVerificationEmail = action.payload.email
+          setPendingVerificationEmail(action.payload.email)
+        }
+      })
+      .addCase(resendOtp.rejected, (state, action) => {
+        state.resendStatus = 'failed'
         state.verificationError = action.payload
       })
   },

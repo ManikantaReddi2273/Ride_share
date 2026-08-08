@@ -134,7 +134,7 @@ export const setupInterceptors = (store) => {
       const originalRequest = error.config
       
       // Skip token refresh for public endpoints (they shouldn't return 401, but if they do, don't try to refresh)
-      const publicEndpoints = ['/login', '/register', '/verify-otp', '/forgot-password', '/reset-password']
+      const publicEndpoints = ['/login', '/register', '/verify-otp', '/resend-otp', '/forgot-password', '/reset-password']
       const isPublicEndpoint = publicEndpoints.some(endpoint => originalRequest?.url?.includes(endpoint))
       
       if (error.response?.status === 401 && !originalRequest._retry && !isPublicEndpoint) {

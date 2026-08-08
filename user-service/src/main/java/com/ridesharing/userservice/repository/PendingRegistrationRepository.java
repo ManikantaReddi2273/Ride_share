@@ -24,6 +24,13 @@ public interface PendingRegistrationRepository extends JpaRepository<PendingRegi
      * @return Optional PendingRegistration if found
      */
     Optional<PendingRegistration> findByEmail(String email);
+
+    Optional<PendingRegistration> findByPhone(String phone);
+
+    @Query("SELECT p FROM PendingRegistration p WHERE p.email = :email OR p.phone = :phone")
+    java.util.List<PendingRegistration> findAllByEmailOrPhone(
+            @Param("email") String email,
+            @Param("phone") String phone);
     
     /**
      * Check if pending registration exists by email or phone

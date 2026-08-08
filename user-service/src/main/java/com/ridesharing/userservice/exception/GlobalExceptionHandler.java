@@ -1,5 +1,6 @@
 package com.ridesharing.userservice.exception;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -103,6 +104,23 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now()
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex) {
+        String message = "This email or phone is already registered. Please login or resend OTP.";
+        String raw = ex.getMostSpecificCause() != null
+                ? ex.getMostSpecificCause().getMessage() : ex.getMessage();
+        if (raw != null && raw.toLowerCase().contains("pending")) {
+            message = "A signup is already in progress for this email/phone. Use Resend OTP or try again.";
+        }
+        ErrorResponse errorResponse = new ErrorResponse(
+                "Conflict",
+                message,
+                HttpStatus.CONFLICT.value(),
+                LocalDateTime.now()
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
     }
     
     /**

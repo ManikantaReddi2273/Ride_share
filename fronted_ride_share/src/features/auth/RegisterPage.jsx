@@ -17,7 +17,7 @@ import * as yup from 'yup'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, Link, useLocation } from 'react-router-dom'
 
-import { registerUser, verifyOtp, logout, clearPendingVerification } from './authSlice'
+import { registerUser, verifyOtp, resendOtp, logout, clearPendingVerification } from './authSlice'
 
 const schema = yup.object().shape({
   name: yup.string().required('Name is required'),
@@ -51,6 +51,8 @@ const RegisterPage = () => {
     verificationMessage,
     verificationError,
     registrationMessage,
+    resendStatus,
+    resendMessage,
   } = useSelector((state) => state.auth)
 
   const {
@@ -159,6 +161,11 @@ const RegisterPage = () => {
     })
   }
 
+  const onResendOtp = () => {
+    if (!pendingVerificationEmail) return
+    dispatch(resendOtp({ email: pendingVerificationEmail }))
+  }
+
   return (
     <Box
       sx={{
@@ -250,10 +257,15 @@ const RegisterPage = () => {
               fullWidth
               sx={{ mt: 4 }}
               startIcon={<PersonAddAltRoundedIcon />}
-              disabled={status === 'loading' || Boolean(pendingVerificationEmail)}
+              disabled={status === 'loading'}
             >
               {status === 'loading' ? 'Creating account...' : 'Create account'}
             </Button>
+            {pendingVerificationEmail && (
+              <Typography variant="caption" color="text.secondary" display="block" mt={1} textAlign="center">
+                Already waiting for OTP? Scroll down to verify or resend — or submit again to refresh the code.
+              </Typography>
+            )}
           </Box>
 
           {pendingVerificationEmail && (
@@ -277,6 +289,11 @@ const RegisterPage = () => {
                       {verificationError}
                     </Alert>
                   )}
+                  {resendMessage && resendStatus === 'succeeded' && (
+                    <Alert severity="success" sx={{ mb: 2 }}>
+                      {resendMessage}
+                    </Alert>
+                  )}
                   <Box component="form" onSubmit={handleOtpSubmit(onVerifyOtp)}>
                     <Grid container spacing={2}>
                       <Grid item xs={12} md={6}>
@@ -285,11 +302,11 @@ const RegisterPage = () => {
                           fullWidth
                           {...registerOtp('otp')}
                           error={!!otpErrors.otp}
-                          helperText={otpErrors.otp?.message || 'Check your email for the code'}
+                          helperText={otpErrors.otp?.message || 'Check your email (and spam folder) for the code'}
                           inputProps={{ maxLength: 4 }}
                         />
                       </Grid>
-                      <Grid item xs={12} md={6} display="flex" alignItems="center">
+                      <Grid item xs={12} md={6} display="flex" alignItems="center" gap={1}>
                         <Button
                           type="submit"
                           variant="contained"
@@ -298,6 +315,20 @@ const RegisterPage = () => {
                         >
                           {verificationStatus === 'loading' ? 'Verifying...' : 'Verify OTP'}
                         </Button>
+                      </Grid>
+                      <Grid item xs={12}>
+                        <Button
+                          type="button"
+                          variant="outlined"
+                          fullWidth
+                          onClick={onResendOtp}
+                          disabled={resendStatus === 'loading'}
+                        >
+                          {resendStatus === 'loading' ? 'Sending...' : 'Resend OTP'}
+                        </Button>
+                        <Typography variant="caption" color="text.secondary" display="block" mt={1}>
+                          Didn&apos;t get the email? Check spam, then click Resend OTP.
+                        </Typography>
                       </Grid>
                     </Grid>
                   </Box>

@@ -5,6 +5,7 @@ export const endpoints = {
     profile: '/users/profile',
     refresh: '/users/refresh',
     verifyOtp: '/users/verify-otp',
+    resendOtp: '/users/resend-otp',
     changePassword: '/users/change-password',
     deleteAccount: '/users/account',
     forgotPassword: '/users/forgot-password',
