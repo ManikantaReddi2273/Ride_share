@@ -7,7 +7,8 @@ import endpoints from './endpoints'
 
 export const apiClient = axios.create({
   baseURL: config.apiBaseUrl,
-  timeout: 45000,
+  // Render free services can take 60–120s to wake from sleep
+  timeout: 120000,
 })
 
 /**
@@ -132,6 +133,18 @@ export const setupInterceptors = (store) => {
         })
       }
       const originalRequest = error.config
+
+      // Retry once on Render cold-start 502/503 (gives services time to wake)
+      const status = error.response?.status
+      if (
+        originalRequest &&
+        !originalRequest._coldStartRetry &&
+        (status === 502 || status === 503 || status === 504 || error.code === 'ECONNABORTED')
+      ) {
+        originalRequest._coldStartRetry = true
+        await new Promise((resolve) => setTimeout(resolve, 8000))
+        return apiClient(originalRequest)
+      }
       
       // Skip token refresh for public endpoints (they shouldn't return 401, but if they do, don't try to refresh)
       const publicEndpoints = ['/login', '/register', '/verify-otp', '/resend-otp', '/forgot-password', '/reset-password']

@@ -1,5 +1,6 @@
 package com.ridesharing.apigateway.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
@@ -13,6 +14,19 @@ import org.springframework.context.annotation.Configuration;
  
 @Configuration
 public class GatewayConfig {
+
+    /**
+     * Optional direct HTTPS URIs for Render (avoids stale Eureka entries while services sleep).
+     * Locally these stay as lb://… and use Eureka.
+     */
+    @Value("${gateway.user-service-uri:lb://user-service}")
+    private String userServiceUri;
+
+    @Value("${gateway.ride-service-uri:lb://ride-service}")
+    private String rideServiceUri;
+
+    @Value("${gateway.payment-service-uri:lb://payment-service}")
+    private String paymentServiceUri;
 
     /**
      * Configure routes for all microservices
@@ -32,25 +46,25 @@ public class GatewayConfig {
                 // User Service Route
                 .route("user-service", r -> r
                     .path("/api/users/**")
-                    .uri("lb://user-service") // lb = load balanced, uses Eureka service name
+                    .uri(userServiceUri)
                 )
                 
                 // Ride Service Route
                 .route("ride-service", r -> r
                     .path("/api/rides/**")
-                    .uri("lb://ride-service")
+                    .uri(rideServiceUri)
                 )
                 
                 // Reviews Route (handled by Ride Service)
                 .route("reviews-service", r -> r
                     .path("/api/reviews/**")
-                    .uri("lb://ride-service")
+                    .uri(rideServiceUri)
                 )
                 
                 // Payment Service Route
                 .route("payment-service", r -> r
                     .path("/api/payments/**")
-                    .uri("lb://payment-service")
+                    .uri(paymentServiceUri)
                 )
                 
                 // Route Service Route (Future)

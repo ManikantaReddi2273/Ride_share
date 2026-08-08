@@ -25,30 +25,51 @@ const initialState = {
   otpHint: null,
 }
 
+const isHtmlBlob = (value) =>
+  typeof value === 'string' && (value.includes('<!DOCTYPE') || value.includes('<html'))
+
+const friendlyHttpMessage = (status) => {
+  if (status === 502 || status === 503 || status === 504) {
+    return 'Server is waking up (Render free tier). Wait about a minute and try again.'
+  }
+  if (status === 500) {
+    return 'Server error. Please try again in a moment.'
+  }
+  return null
+}
+
 const handleError = (error) => {
-  // Handle different error response formats
+  const status = error?.response?.status
+  const gatewayHint = friendlyHttpMessage(status)
+  if (gatewayHint) {
+    return gatewayHint
+  }
+
   if (error?.response?.data) {
-    // Check for message field (most common)
-    if (error.response.data.message) {
-      return error.response.data.message
+    const data = error.response.data
+    if (typeof data === 'string') {
+      if (isHtmlBlob(data)) {
+        return friendlyHttpMessage(status) || 'Service temporarily unavailable. Please try again.'
+      }
+      return data
     }
-    // Check for error field
-    if (error.response.data.error) {
-      return error.response.data.error
+    if (data.message && !isHtmlBlob(data.message)) {
+      return data.message
     }
-    // Check if data is a string
-    if (typeof error.response.data === 'string') {
-      return error.response.data
+    if (data.error && !isHtmlBlob(data.error)) {
+      return data.error
     }
   }
-  // Check network errors
-  if (error?.message) {
-    if (error.message.includes('Network Error') || error.message.includes('timeout')) {
-      return 'Network error. Please check your connection and try again.'
-    }
+
+  if (error?.code === 'ECONNABORTED' || error?.message?.includes('timeout')) {
+    return 'Server is taking too long (cold start). Wait a minute and try again.'
+  }
+  if (error?.message?.includes('Network Error')) {
+    return 'Network error. Please check your connection and try again.'
+  }
+  if (error?.message && !isHtmlBlob(error.message)) {
     return error.message
   }
-  // Fallback to default
   return 'An unexpected error occurred. Please try again.'
 }
 

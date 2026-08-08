@@ -153,6 +153,13 @@ services:
         sync: false
       - key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
         sync: false
+      # Direct HTTPS upstreams — avoids stale Eureka while free services sleep
+      - key: GATEWAY_USER_SERVICE_URI
+        sync: false
+      - key: GATEWAY_RIDE_SERVICE_URI
+        sync: false
+      - key: GATEWAY_PAYMENT_SERVICE_URI
+        sync: false
       - key: EUREKA_INSTANCE_PREFER_IP_ADDRESS
         value: "false"
       - key: EUREKA_NON_SECURE_PORT_ENABLED
