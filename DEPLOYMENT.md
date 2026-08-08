@@ -1,16 +1,14 @@
-# Deployment Guide — Neon + Oracle ARM VM + Vercel
-# Smart Ride Sharing System
-
-This repo is prepared for:
+# Deployment Guide — Neon + Railway + Vercel
 
 | Layer | Platform |
 |-------|----------|
 | Database | **Neon** (PostgreSQL) |
-| Backend | **Oracle Cloud Always Free ARM VM** (Docker Compose) |
+| Backend | **Railway** (5 Docker services) |
 | Frontend | **Vercel** |
 
-I (the agent) prepared Dockerfiles, `docker-compose.yml`, nginx, and env templates.
-**You must complete the cloud-console steps below** (accounts, Neon DBs, VM, Vercel).
+Your repo already has Dockerfiles + `railway.toml` per service.
+
+> **Security:** If you pasted a Neon password in chat, **rotate it** in Neon → Credentials → reset password, then use the new password in Railway.
 
 ---
 
@@ -18,201 +16,235 @@ I (the agent) prepared Dockerfiles, `docker-compose.yml`, nginx, and env templat
 
 ```
 Browser → Vercel (React)
-              │
-              ├─ REST  → http://ORACLE_IP/api/  → nginx → API Gateway → microservices
-              └─ WS    → http://ORACLE_IP/ws    → nginx → ride-service
-                              │
-                         Neon Postgres
-                         (user_db, ride_db, payment_db)
+            │
+            ├─ REST → https://<gateway>.up.railway.app/api/**
+            └─ WS   → https://<ride>.up.railway.app/ws
+                        │
+                   Railway private network
+                   eureka / user / ride / payment / gateway
+                        │
+                      Neon
+                 user_db / ride_db / payment_db
 ```
 
 ---
 
-## PART A — What YOU do (required)
+## STEP 1 — Neon databases (you already have a project)
 
-### 1) Neon (database) — ~10 minutes
+From your connection string:
 
-1. Go to https://console.neon.tech and sign up / log in.
-2. Create a project (region close to you or to Oracle).
-3. In the Neon SQL Editor or Databases UI, create **three** databases:
-   - `user_db`
-   - `ride_db`
-   - `payment_db`
-4. Open **Connection details** and copy:
-   - Host (e.g. `ep-xxxx.ap-southeast-1.aws.neon.tech`)
-   - User (often `neondb_owner`)
-   - Password
-5. Build JDBC URLs like:
+| Field | Value |
+|-------|--------|
+| Host | `ep-weathered-cloud-axhpd4hu.c-4.us-east-2.aws.neon.tech` |
+| User | `neondb_owner` |
+| Default DB | `neondb` (not used by the app) |
+
+### 1.1 Create the 3 app databases
+
+Neon SQL Editor → run (one at a time if needed):
+
+```sql
+CREATE DATABASE user_db;
+CREATE DATABASE ride_db;
+CREATE DATABASE payment_db;
+```
+
+(Or use `deploy/neon-create-databases.sql`)
+
+### 1.2 JDBC URLs for Railway
 
 ```text
-jdbc:postgresql://HOST/user_db?sslmode=require
-jdbc:postgresql://HOST/ride_db?sslmode=require
-jdbc:postgresql://HOST/payment_db?sslmode=require
+jdbc:postgresql://ep-weathered-cloud-axhpd4hu.c-4.us-east-2.aws.neon.tech/user_db?sslmode=require
+jdbc:postgresql://ep-weathered-cloud-axhpd4hu.c-4.us-east-2.aws.neon.tech/ride_db?sslmode=require
+jdbc:postgresql://ep-weathered-cloud-axhpd4hu.c-4.us-east-2.aws.neon.tech/payment_db?sslmode=require
 ```
 
-Keep these for the `.env` file on the VM.
+Password = your Neon password (from Connect panel / Credentials).
 
 ---
 
-### 2) Oracle Cloud Always Free ARM VM — ~20–30 minutes
+## STEP 2 — Railway backend (do this in the browser)
 
-1. Sign up: https://www.oracle.com/cloud/free/
-2. **Compute → Instances → Create instance**
-   - Image: **Ubuntu 22.04** (ARM)
-   - Shape: **VM.Standard.A1.Flex** (Ampere)
-   - Use as much free ARM capacity as allowed (e.g. 2–4 OCPU, 12–24 GB)
-   - Add your **SSH public key**
-3. Create instance → note **Public IP**
-4. **Networking → VCN → Subnet → Security List** (or NSG): add Ingress rules:
-   - TCP **22** (SSH) — ideally only your IP
-   - TCP **80** (HTTP / nginx)
-   - (Optional while testing) TCP **8080**, **8082**, **8761**
-5. SSH in:
+### 2.1 Create project
 
-```bash
-ssh -i your-key.pem ubuntu@YOUR_PUBLIC_IP
-```
+1. Go to https://railway.app → Login with GitHub  
+2. **New Project** → **Deploy from GitHub repo** → `ManikantaReddi2273/Ride_share`  
+3. Empty project is fine if it asks to pick a path — we add services manually.
 
-6. Install Docker (script from repo after clone, or):
+### 2.2 Add 5 services (same repo, different root folders)
 
-```bash
-curl -fsSL https://get.docker.com | sudo sh
-sudo usermod -aG docker $USER
-# log out and SSH back in
-```
+For **each** service below: **+ New** → **GitHub Repo** → same repo → set **Root Directory**:
 
-Or after cloning:
+| Railway service name (set exactly) | Root Directory |
+|------------------------------------|----------------|
+| `eureka-server` | `eureka-server` |
+| `api-gateway-service` | `api-gateway-service` |
+| `user-service` | `user-service` |
+| `ride-service` | `ride-service` |
+| `payment-service` | `payment-service` |
 
-```bash
-chmod +x deploy/oracle-setup.sh
-./deploy/oracle-setup.sh
-# then log out / SSH again
-```
+Each folder has a `Dockerfile` + `railway.toml`. Railway will build with Docker.
 
-7. Clone and configure:
+**Deploy order tip:** deploy `eureka-server` first and wait until healthy, then the others.
 
-```bash
-git clone https://github.com/ManikantaReddi2273/Ride_share.git
-cd Ride_share
-cp deploy/env.example .env
-nano .env   # paste Neon URLs, JWT, mail, Razorpay, CORS
-```
+### 2.3 Shared variables (Project → Variables) OR per-service
 
-8. **CORS_ALLOWED_ORIGINS**: first you can use `*` temporarily is NOT supported with credentials — leave a placeholder, then update after Vercel gives you a URL:
+Set these on **every** service that needs them (or use Railway shared variables):
+
+#### All Java services
 
 ```env
-CORS_ALLOWED_ORIGINS=https://YOUR_APP.vercel.app,http://localhost:5173
+EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server.railway.internal:8761/eureka/
+EUREKA_INSTANCE_PREFER_IP_ADDRESS=false
+JWT_SECRET=pick-a-long-random-secret
+JAVA_OPTS=-Xms256m -Xmx512m
 ```
 
-9. Build and start (first build takes a long time on ARM):
+#### Eureka only
 
-```bash
-docker compose up -d --build
-docker compose ps
-docker compose logs -f
+```env
+EUREKA_INSTANCE_HOSTNAME=eureka-server.railway.internal
+JAVA_OPTS=-Xms256m -Xmx384m
 ```
 
-10. Smoke test from your PC:
+#### user-service
 
-```text
-http://YOUR_PUBLIC_IP/health
-http://YOUR_PUBLIC_IP:8761          (Eureka — lock down later)
-http://YOUR_PUBLIC_IP/api/users/admin/health   (may need auth)
+```env
+POSTGRES_AUTO_CREATE=false
+SPRING_DATASOURCE_URL=jdbc:postgresql://ep-weathered-cloud-axhpd4hu.c-4.us-east-2.aws.neon.tech/user_db?sslmode=require
+SPRING_DATASOURCE_USERNAME=neondb_owner
+SPRING_DATASOURCE_PASSWORD=<YOUR_NEON_PASSWORD>
+SPRING_MAIL_USERNAME=<gmail>
+SPRING_MAIL_PASSWORD=<gmail-app-password>
+JWT_SECRET=<same as gateway>
+EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server.railway.internal:8761/eureka/
+EUREKA_INSTANCE_PREFER_IP_ADDRESS=false
+EUREKA_INSTANCE_HOSTNAME=user-service.railway.internal
 ```
 
-Try register/login via Postman against `http://YOUR_PUBLIC_IP/api/users/register`
+#### ride-service
+
+```env
+POSTGRES_AUTO_CREATE=false
+SPRING_DATASOURCE_URL=jdbc:postgresql://ep-weathered-cloud-axhpd4hu.c-4.us-east-2.aws.neon.tech/ride_db?sslmode=require
+SPRING_DATASOURCE_USERNAME=neondb_owner
+SPRING_DATASOURCE_PASSWORD=<YOUR_NEON_PASSWORD>
+CORS_ALLOWED_ORIGINS=https://YOUR_VERCEL_URL.vercel.app,http://localhost:5173
+GOOGLE_MAPS_API_KEY=<ors-key>
+SPRING_MAIL_USERNAME=<gmail>
+SPRING_MAIL_PASSWORD=<gmail-app-password>
+EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server.railway.internal:8761/eureka/
+EUREKA_INSTANCE_PREFER_IP_ADDRESS=false
+EUREKA_INSTANCE_HOSTNAME=ride-service.railway.internal
+JAVA_OPTS=-Xms256m -Xmx768m
+```
+
+#### payment-service
+
+```env
+POSTGRES_AUTO_CREATE=false
+SPRING_DATASOURCE_URL=jdbc:postgresql://ep-weathered-cloud-axhpd4hu.c-4.us-east-2.aws.neon.tech/payment_db?sslmode=require
+SPRING_DATASOURCE_USERNAME=neondb_owner
+SPRING_DATASOURCE_PASSWORD=<YOUR_NEON_PASSWORD>
+RAZORPAY_KEY_ID=<key>
+RAZORPAY_KEY_SECRET=<secret>
+RAZORPAY_MODE=TEST
+EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server.railway.internal:8761/eureka/
+EUREKA_INSTANCE_PREFER_IP_ADDRESS=false
+EUREKA_INSTANCE_HOSTNAME=payment-service.railway.internal
+```
+
+#### api-gateway-service
+
+```env
+JWT_SECRET=<same secret>
+CORS_ALLOWED_ORIGINS=https://YOUR_VERCEL_URL.vercel.app,http://localhost:5173
+EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server.railway.internal:8761/eureka/
+EUREKA_INSTANCE_PREFER_IP_ADDRESS=false
+EUREKA_INSTANCE_HOSTNAME=api-gateway-service.railway.internal
+```
+
+### 2.4 Public domains (required)
+
+On these services → **Settings → Networking → Generate Domain**:
+
+| Service | Why |
+|---------|-----|
+| `api-gateway-service` | Frontend REST (`/api/...`) |
+| `ride-service` | WebSocket (`/ws`) |
+
+Copy the URLs, e.g.:
+
+- Gateway: `https://api-gateway-service-production-xxxx.up.railway.app`  
+- Ride: `https://ride-service-production-xxxx.up.railway.app`
+
+### 2.5 Check logs
+
+Open each service → **Deployments → View Logs**.  
+Look for: started Tomcat / Netty, Eureka registration, no DB auth errors.
 
 ---
 
-### 3) Vercel (frontend) — ~10 minutes
+## STEP 3 — Vercel frontend
 
-1. Go to https://vercel.com and sign in with GitHub.
-2. **Add New Project** → import `ManikantaReddi2273/Ride_share`.
-3. Set **Root Directory** to: `fronted_ride_share`
-4. Framework: Vite (auto).
-5. **Environment Variables**:
+1. https://vercel.com → Import `ManikantaReddi2273/Ride_share`  
+2. **Root Directory:** `fronted_ride_share`  
+3. Environment variables:
 
 | Name | Value |
 |------|--------|
-| `VITE_API_BASE_URL` | `http://YOUR_ORACLE_PUBLIC_IP/api` |
-| `VITE_WS_URL` | `http://YOUR_ORACLE_PUBLIC_IP/ws` |
+| `VITE_API_BASE_URL` | `https://<your-gateway-domain>/api` |
+| `VITE_WS_URL` | `https://<your-ride-domain>/ws` |
 | `VITE_STORAGE_SECRET` | any long random string |
 
-6. Deploy → copy the URL, e.g. `https://ride-share-xxx.vercel.app`
-7. Go back to Oracle VM `.env` and set:
-
-```env
-CORS_ALLOWED_ORIGINS=https://ride-share-xxx.vercel.app,http://localhost:5173
-```
-
-8. Restart gateway + ride (CORS / WebSocket origins):
-
-```bash
-docker compose up -d --force-recreate api-gateway-service ride-service nginx
-```
-
-9. Redeploy Vercel if you changed env vars (Deployments → Redeploy).
-
-10. Open the Vercel URL and test: register → login → search/post ride.
+4. Deploy → copy Vercel URL (e.g. `https://ride-share-xxx.vercel.app`)  
+5. Update Railway `CORS_ALLOWED_ORIGINS` on **gateway** and **ride-service** to that URL  
+6. Redeploy those two Railway services  
+7. Redeploy Vercel if needed  
 
 ---
 
-## PART B — What was prepared in this repo (already done)
+## STEP 4 — Smoke test
 
-- `Dockerfile` in each backend service
-- `docker-compose.yml` (Eureka, Gateway, User, Ride, Payment, Nginx)
-- `deploy/nginx.conf` (`/api` + `/ws`)
-- `deploy/env.example`
-- `deploy/oracle-setup.sh`
-- `fronted_ride_share/vercel.json`
-- `fronted_ride_share/.env.example`
-- Spring `application.properties` read Neon/JWT/CORS/mail from environment
-- `POSTGRES_AUTO_CREATE=false` for Neon (you create DBs in Neon UI)
+1. Open Vercel URL  
+2. Register → OTP email → Login  
+3. Add vehicle → post ride → search → book (Razorpay test)  
+4. Confirm WebSocket notifications work  
 
 ---
 
-## PART C — Useful commands (on the VM)
+## Checklist
 
-```bash
-docker compose ps
-docker compose logs -f user-service
-docker compose restart api-gateway-service
-docker compose down
-docker compose up -d --build
-```
-
----
-
-## PART D — Later improvements (optional, still free)
-
-1. Point a domain to the VM IP + Let's Encrypt HTTPS (Certbot).
-2. Close public access to 8761 / 8081 / 8084.
-3. Restrict SSH to your IP only.
-4. Rotate JWT / DB / Razorpay secrets (they were in git history before).
+- [ ] Neon: `user_db`, `ride_db`, `payment_db` created  
+- [ ] Railway: 5 services, names match table above  
+- [ ] Env vars set (DB URLs with `sslmode=require`)  
+- [ ] Public domains on gateway + ride  
+- [ ] Vercel root = `fronted_ride_share` + env vars  
+- [ ] CORS updated with Vercel URL  
+- [ ] End-to-end test  
 
 ---
 
-## Checklist (print this)
+## Common failures
 
-- [ ] Neon project + `user_db` / `ride_db` / `payment_db`
-- [ ] Oracle ARM VM + SSH + security list (22, 80)
-- [ ] Docker installed on VM
-- [ ] Repo cloned + `.env` filled from `deploy/env.example`
-- [ ] `docker compose up -d --build` healthy
-- [ ] Vercel project (`fronted_ride_share` root) + env vars
-- [ ] CORS updated with Vercel URL + services recreated
-- [ ] End-to-end test in browser
+| Problem | Fix |
+|---------|-----|
+| DB connection refused / SSL | Use `?sslmode=require` and correct DB name |
+| Service not found in Eureka | Service name + `*.railway.internal` hostname; wait for Eureka healthy first |
+| CORS error | Exact Vercel origin in `CORS_ALLOWED_ORIGINS` (https, no trailing `/`) |
+| WS fails | `VITE_WS_URL` must be ride public URL + `/ws` |
+| Out of memory | Raise Railway plan RAM or lower `JAVA_OPTS` |
+| Free credits exhausted | Railway trial credits run out → add card / upgrade |
 
 ---
 
-## If something fails
+## What you still must do yourself
 
-| Symptom | Check |
-|---------|--------|
-| Services crash on DB | Neon URL `sslmode=require`, DB names exist, password correct |
-| CORS errors in browser | `CORS_ALLOWED_ORIGINS` exact Vercel URL (https, no trailing slash) |
-| WebSocket fails | Port 80 open; `VITE_WS_URL=http://IP/ws`; ride-service healthy |
-| Eureka empty | Wait 1–2 min; `docker compose logs eureka-server` |
-| Build OOM on VM | Lower `JAVA_OPTS` or increase VM memory; build one service at a time |
+1. Create the 3 Neon databases (SQL above)  
+2. Log into Railway + create 5 services from GitHub  
+3. Paste env vars (including Neon password)  
+4. Generate public domains  
+5. Deploy Vercel with gateway/ride URLs  
+6. Fix CORS after you know the Vercel URL  
 
-When your Oracle public IP and Neon connection string are ready, fill `.env` and run Compose — that is the backend go-live step.
+I cannot finish Railway/Vercel deploys from here without your logged-in browser session (`railway login` is required locally).
